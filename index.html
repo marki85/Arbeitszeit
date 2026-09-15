@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arbeitszeit</title>
+<meta name="description" content="Arbeitszeiterfassung für 35- und 40-Stunden-Verträge. Läuft offline, speichert nur auf deinem Gerät.">
+<meta name="theme-color" content="#e7e9ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1215" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Arbeitszeit">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="inner">
+    <button class="nav-btn" id="navPrev" aria-label="Zurück">‹</button>
+    <div class="title">
+      <div class="t1" id="navTitle">Arbeitszeit</div>
+      <div class="t2" id="navSub"></div>
+    </div>
+    <button class="nav-btn" id="navNext" aria-label="Weiter">›</button>
+  </div>
+</header>
+
+<main class="wrap" id="view" style="padding-top:12px"></main>
+
+<nav class="tabbar" aria-label="Hauptnavigation">
+  <div class="inner">
+    <button class="tab" data-view="day"      aria-current="page"><span class="ic">⏱️</span>Tag</button>
+    <button class="tab" data-view="week"><span class="ic">📅</span>Woche</button>
+    <button class="tab" data-view="month"><span class="ic">📊</span>Monat</button>
+    <button class="tab" data-view="settings"><span class="ic">⚙️</span>Mehr</button>
+  </div>
+</nav>
+
+<noscript>
+  <div class="wrap" style="padding-top:20px">
+    <div class="notice stop"><span class="ico">🛑</span><span>Diese App braucht JavaScript.</span></div>
+  </div>
+</noscript>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
