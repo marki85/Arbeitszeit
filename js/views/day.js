@@ -89,10 +89,9 @@ function build(){
   const noteCard = h("div", { class: "card tight" }, els.noteInput);
 
   root.replaceChildren(
-    typeSeg, h("div", { class: "spacer" }),
-    els.stampCard, hero, els.notices, els.spruchCard,
-    tlCard, h("div", { class: "card" }, grid),
-    segCard, els.otCard, noteCard,
+    typeSeg,
+    h("div", { class: "col" }, els.stampCard, hero, els.notices, els.spruchCard, tlCard),
+    h("div", { class: "col" }, h("div", { class: "card" }, grid), segCard, els.otCard, noteCard),
     h("div", { class: "foot" }, "Alle Angaben ohne Gewähr.")
   );
   lastSegSig = "";
@@ -348,11 +347,11 @@ export function update(){
   /* Kennzahlen */
   els.vPresence.textContent = d.presence > 0 ? fmtShort(d.presence) : "—";
   els.vNet.textContent      = d.segments.length ? fmtShort(d.net) : "—";
-  els.vBreak.textContent    = d.presence > 0
-    ? fmtShort(d.breaksTaken) + (d.breakDeducted > 0 ? "  +" + Math.round(d.breakDeducted) : "")
-    : "—";
+  els.vBreak.textContent    = d.breaksTaken > 0 || d.presence > 0 ? fmtShort(d.breaksTaken) : "—";
   els.vBreak.title = d.breakDeducted > 0
-    ? Math.round(d.breakDeducted) + " Min. gesetzliche Pause zusätzlich abgezogen" : "";
+    ? Math.round(d.breakDeducted) + " Min. Pause abgezogen"
+      + (d.gaps > 0 ? ", dazu " + Math.round(d.gaps) + " Min. zwischen den Zeiträumen" : "")
+    : "";
   els.vRemain.textContent   = d.remaining != null && d.remaining > 0 ? fmtShort(d.remaining)
                             : d.plannedEnd != null ? "erledigt" : "—";
   els.vSaldo.textContent    = fmtSigned(d.saldo);

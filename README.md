@@ -18,6 +18,13 @@ automatisch als Pause.
 Wochenstunden frei einstellbar (35 h, 40 h, Teilzeit), Arbeitstage wählbar,
 Tagessoll pro Wochentag einzeln überschreibbar.
 
+**Pausen ohne Zutun**
+Frühstück (15 Min.) und Mittag (30 Min.) werden automatisch abgezogen – nichts
+anhaken, nichts bestätigen, nichts stempeln. Liegt zwischen zwei Zeiträumen
+ohnehin eine längere Lücke, etwa die Fahrt von der Firma nach Hause, ist die
+Pause damit abgedeckt; abgezogen wird nur, was noch fehlt. Wer es anders
+braucht, stellt auf „Immer zusätzlich" um.
+
 **Tagesarten**
 Arbeit, Urlaub, halber Urlaub, Krank, Feiertag, Gleittag, Frei. Gesetzliche
 Feiertage kommen je nach Bundesland automatisch.
@@ -29,8 +36,8 @@ Konto grundlos ins Minus zu ziehen.
 
 **Arbeitszeitgesetz im Blick**
 Warnung bei 10 Stunden, gesetzliche Mindestpausen (30 Min. ab 6 h, 45 Min. ab 9 h)
-werden auf Wunsch automatisch abgezogen, Hinweis bei zu kurzer Ruhezeit
-zwischen zwei Tagen. Dazu betriebliche Regeln wie ein frühester Arbeitsbeginn.
+greifen zusätzlich an langen Tagen, Hinweis bei zu kurzer Ruhezeit zwischen
+zwei Tagen. Dazu betriebliche Regeln wie ein frühester Arbeitsbeginn.
 
 **Auswertung**
 Wochen- und Monatsansicht, Aufteilung nach Arbeitsort, CSV-Export für Excel

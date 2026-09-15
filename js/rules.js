@@ -77,18 +77,34 @@ export function requiredBreak(net){
   return 0;
 }
 
-/** Zieht fehlende gesetzliche Pause von der Bruttozeit ab.
-    Gibt { net, deducted } zurueck. An den Schwellen (6 h / 9 h) wird genau
-    auf die Schwelle gekappt, sonst waere das Ergebnis widerspruechlich. */
-export function applyLegalBreak(gross, taken){
-  const cut = req => gross - Math.max(0, req - taken);
+/** Zieht fehlende Pausenzeit von der Bruttozeit ab.
+    `opts.company` ist die betrieblich angesetzte Pause, die immer mindestens
+    abgezogen wird (Fruehstueck + Mittag); `opts.legal` schaltet die
+    gesetzlichen Mindestpausen dazu. An den Schwellen (6 h / 9 h) wird genau
+    auf die Schwelle gekappt - sonst waere das Ergebnis widerspruechlich:
+    mehr Abzug hiesse weniger Pausenpflicht und umgekehrt.
+    Gibt { net, deducted } zurueck. */
+export function applyBreakRules(gross, taken, opts){
+  opts = opts || {};
+  const floor = Math.max(0, opts.company || 0);
+  const cut = req => gross - Math.max(0, Math.max(req, floor) - taken);
+  const done = net => ({ net: Math.max(0, net), deducted: gross - Math.max(0, net) });
+
+  if (!opts.legal) return done(cut(0));
+
   let net = cut(ARBZG.break9);
-  if (net > 9 * 60) return { net: net, deducted: gross - net };
+  if (net > 9 * 60) return done(net);
   net = cut(ARBZG.break6);
-  if (net > 9 * 60) return { net: 9 * 60, deducted: gross - 9 * 60 };
-  if (net > 6 * 60) return { net: net, deducted: gross - net };
-  if (gross > 6 * 60) return { net: 6 * 60, deducted: gross - 6 * 60 };
-  return { net: gross, deducted: 0 };
+  if (net > 9 * 60) return done(9 * 60);
+  if (net > 6 * 60) return done(net);
+  net = cut(0);
+  if (net > 6 * 60) return done(6 * 60);
+  return done(net);
+}
+
+/** Betrieblich angesetzte Pause in Minuten: Fruehstueck + Mittag. */
+export function companyBreak(settings){
+  return Math.max(0, (+settings.breakfast || 0) + (+settings.lunch || 0));
 }
 
 /* ---------- Zeitraeume ---------- */
@@ -186,22 +202,30 @@ export function computeDay(key, day, settings, ctx){
   }
   const presence = firstStart == null ? 0 : Math.max(0, lastEnd - firstStart);
 
-  /* Brutto / Pause / Netto */
+  /* ---- Brutto / Pause / Netto ----
+     gross   = Summe der gestempelten Zeitraeume
+     gaps    = Zeit zwischen den Zeitraeumen (Fahrt, selbst gestempelte Pause)
+     deducted= zusaetzlich abgezogene Pause
+     net     = tatsaechlich angerechnete Arbeitszeit */
   const gross = segments.reduce((a, s) => a + s.min, 0);
-  let breaksTaken, net, deducted = 0;
+  const firmBreak = companyBreak(settings);
+  const gaps = Math.max(0, presence - gross);
+  let net = gross, deducted = 0;
 
-  if (settings.breakMode === "flat") {
-    breaksTaken = gross > 0 ? Math.min(settings.flatBreak || 0, presence) : 0;
-    net = Math.max(0, presence - breaksTaken);
-  } else {
-    breaksTaken = Math.max(0, presence - gross);
-    net = gross;
-  }
-  if (settings.enforceLegalBreaks && net > 0) {
-    const r = applyLegalBreak(net, breaksTaken);
+  if (gross > 0) {
+    // "add": die Betriebspause geht zusaetzlich zu den Luecken ab.
+    // "min" (Standard): es wird sichergestellt, dass ueberhaupt so viel Pause
+    //        zusammenkommt - eine laengere Luecke deckt sie also bereits ab.
+    const floor = settings.breakMode === "add" ? gaps + firmBreak : firmBreak;
+    const r = applyBreakRules(gross, gaps, {
+      company: floor, legal: !!settings.enforceLegalBreaks
+    });
     deducted = r.deducted;
     net = r.net;
   }
+  // Angezeigte Pause: alles zwischen erstem und letztem Stempel, was nicht
+  // als Arbeit zaehlt - also Luecken plus abgezogene Pause.
+  const breaksTaken = Math.max(0, presence - net);
 
   const worked = credited + net;
   const saldo = worked - target;
@@ -211,9 +235,11 @@ export function computeDay(key, day, settings, ctx){
   /* Prognose Feierabend: erster Start + noch zu leistende Arbeit + Pause */
   let plannedEnd = null, remaining = null;
   if (firstStart != null && effTarget > 0) {
-    const plannedBreak = settings.breakMode === "flat"
-      ? (settings.flatBreak || 0)
-      : Math.max(breaksTaken, settings.enforceLegalBreaks ? requiredBreak(effTarget) : 0);
+    // Pause, die bis zum Feierabend zusammenkommt.
+    const legalAtTarget = settings.enforceLegalBreaks ? requiredBreak(effTarget) : 0;
+    const plannedBreak = settings.breakMode === "add"
+      ? gaps + Math.max(firmBreak, legalAtTarget)
+      : Math.max(gaps, firmBreak, legalAtTarget);
     plannedEnd = firstStart + effTarget + plannedBreak;
     remaining = plannedEnd - now;
   }
@@ -241,9 +267,10 @@ export function computeDay(key, day, settings, ctx){
     warnings.push({ level: "warn", icon: "⏳",
       text: "In Kürze ist die 10-Stunden-Grenze erreicht. Danach ist Schluss." });
   }
-  if (deducted > 0) {
+  if (deducted > 0 && settings.breakMode === "gaps") {
     warnings.push({ level: "warn", icon: "☕",
-      text: "Gesetzliche Mindestpause nicht erreicht – es werden <strong>" + Math.round(deducted) + " Min.</strong> abgezogen." });
+      text: "Gesetzliche Mindestpause nicht erreicht – es werden <strong>"
+          + Math.round(deducted) + " Min.</strong> abgezogen." });
   }
   if (ctx.prevEnd != null && firstStart != null) {
     const rest = firstStart + MIN_PER_DAY - ctx.prevEnd;
@@ -270,7 +297,7 @@ export function computeDay(key, day, settings, ctx){
     key: key, type: typeId, typeLabel: type.label, holiday: holiday,
     segments: segments, target: target, credited: credited, effTarget: effTarget,
     gross: gross, net: net, worked: worked, presence: presence,
-    breaksTaken: breaksTaken, breakDeducted: deducted,
+    breaksTaken: breaksTaken, breakDeducted: deducted, gaps: gaps,
     saldo: saldo, firstStart: firstStart, lastEnd: lastEnd,
     running: running, runningSeg: runningSeg,
     plannedEnd: plannedEnd, remaining: remaining,

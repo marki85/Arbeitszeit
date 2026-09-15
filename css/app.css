@@ -83,6 +83,14 @@ body{
 }
 .wrap{width:100%;max-width:520px;margin:0 auto;padding:0 16px}
 
+/* Die Ansichten legen ihre Karten in Spalten-Container. Auf dem Handy loesen
+   die sich auf (display:contents), sodass alles in einer Spalte untereinander
+   steht; am Rechner werden daraus feste Spalten. Feste Spalten sind noetig,
+   weil ein mehrspaltiges Fliesslayout die Karten bei jeder Textaenderung neu
+   verteilt haette - und der Spruch wechselt alle 20 Sekunden. */
+#view>.col{display:contents}
+#view>.seg{margin-bottom:12px}
+
 /* ---------- Kopfzeile ---------- */
 .topbar{
   position:sticky;top:0;z-index:20;
@@ -114,6 +122,8 @@ body{
   padding:16px;margin-bottom:12px;
 }
 .card.tight{padding:12px}
+#view .col>.grid,#view .col>.list{margin-bottom:12px}
+#view .col>:empty{display:none}
 .sec-title{
   font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
   color:var(--ink-2);margin:0 0 10px;
@@ -265,7 +275,12 @@ select{appearance:none;background-image:none;padding-right:11px}
   position:relative;cursor:pointer;padding:16px 16px 26px;text-align:center;
   -webkit-tap-highlight-color:transparent;
 }
-.spruch-txt{font-size:16px;font-weight:640;line-height:1.4;color:var(--amber)}
+.spruch-txt{
+  font-size:16px;font-weight:640;line-height:1.4;color:var(--amber);
+  /* Zwei Zeilen sind fest reserviert: sonst aendert die Karte bei jedem neuen
+     Spruch ihre Hoehe und schiebt alles darunter hin und her. */
+  min-height:2.8em;display:flex;align-items:center;justify-content:center;
+}
 .spruch-hint{position:absolute;left:0;right:0;bottom:8px;font-size:10.5px;
              color:var(--amber);opacity:.65;font-weight:600}
 .confetti{position:fixed;top:-40px;z-index:60;pointer-events:none;will-change:transform;
@@ -400,20 +415,13 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
   .tab[aria-current="page"]{box-shadow:inset 0 -2px 0 var(--petrol)}
 
   #view{
-    columns:2;column-gap:20px;
+    display:grid;grid-template-columns:1fr 1fr;gap:0 20px;align-items:start;
     padding-top:18px!important;
   }
-  #view>*{
-    break-inside:avoid;-webkit-column-break-inside:avoid;
-    page-break-inside:avoid;
-  }
-  /* Die Umschalter oben sollen ueber beide Spalten laufen. */
-  #view>.seg{column-span:all;margin-bottom:14px}
+  #view>.col{display:flex;flex-direction:column;min-width:0}
+  #view>.seg,#view>.foot,#view>details.acc{grid-column:1 / -1}
+  #view>.seg{margin-bottom:14px}
   #view>.spacer{display:none}
-  #view>.foot{column-span:all}
-  /* Aufgeklappt wird das Impressum hoeher als eine Spalte - es bekommt
-     deshalb die volle Breite, sonst schneidet der Spaltenumbruch es ab. */
-  #view>details.acc{column-span:all;break-inside:auto;-webkit-column-break-inside:auto}
 
   .card{margin-bottom:16px}
   .hero{padding:24px 18px 22px}
@@ -426,9 +434,8 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
 }
 
 @media (min-width:1500px){
-  .wrap{max-width:1400px}
-  .topbar .inner,.tabbar .inner{max-width:1400px}
-  #view{columns:3;column-gap:22px}
+  .wrap{max-width:1180px}
+  .topbar .inner,.tabbar .inner{max-width:1180px}
 }
 
 /* Maus statt Finger: dezente Hervorhebung beim Ueberfahren. */

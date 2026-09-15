@@ -3,7 +3,7 @@
 import { h, fill, download, toast } from "../ui.js";
 import * as store from "../store.js";
 import { state, DEFAULTS } from "../store.js";
-import { targetsPerWeekday, PLACES } from "../rules.js";
+import { targetsPerWeekday, companyBreak, PLACES } from "../rules.js";
 import { BUNDESLAENDER } from "../feiertage.js";
 import { fmtShort, fmtNum, fmtSigned, todayKey, toMin, pad2 } from "../time.js";
 
@@ -15,9 +15,12 @@ function set(patch){ store.setSettings(patch); }
 function render(){
   const s = state.settings;
   const targets = targetsPerWeekday(s);
+  const firmBreak = companyBreak(s);
   const dailyMin = s.workdays.length ? targets[s.workdays[0]] : 0;
 
   fill(root,
+
+    h("div", { class: "col" },
 
     /* ---- Vertrag ---- */
     h("div", { class: "card" },
@@ -59,24 +62,38 @@ function render(){
     /* ---- Pausen ---- */
     h("div", { class: "card" },
       h("div", { class: "sec-title" }, "Pausen"),
-      h("div", { class: "seg", style: "margin-bottom:12px" },
-        h("button", { type: "button", "aria-pressed": s.breakMode === "gaps" ? "true" : "false",
-          onclick: () => set({ breakMode: "gaps" }) }, "Selbst stempeln"),
-        h("button", { type: "button", "aria-pressed": s.breakMode === "flat" ? "true" : "false",
-          onclick: () => set({ breakMode: "flat" }) }, "Pauschal abziehen")),
-      s.breakMode === "flat"
-        ? h("div", { class: "field" },
-            h("label", { for: "fb" }, "Pauschale Pause (Minuten)"),
-            h("input", { type: "number", id: "fb", min: "0", max: "240", step: "5", inputmode: "numeric",
-              value: s.flatBreak, onchange: e => set({ flatBreak: +e.target.value }) }))
-        : h("div", { class: "note", style: "margin-top:0" },
-            "Die Lücke zwischen zwei Zeiträumen gilt automatisch als Pause – also auch die Fahrt "
-            + "von der Firma nach Hause."),
+      h("div", { class: "two" },
+        h("div", { class: "field" },
+          h("label", { for: "bf" }, "Frühstück (Min.)"),
+          h("input", { type: "number", id: "bf", min: "0", max: "240", step: "5", inputmode: "numeric",
+            value: s.breakfast, onchange: e => set({ breakfast: +e.target.value }) })),
+        h("div", { class: "field" },
+          h("label", { for: "lu" }, "Mittag (Min.)"),
+          h("input", { type: "number", id: "lu", min: "0", max: "240", step: "5", inputmode: "numeric",
+            value: s.lunch, onchange: e => set({ lunch: +e.target.value }) }))),
+      h("div", { class: "note", style: "margin-top:0;margin-bottom:12px" },
+        "Zusammen " + firmBreak + " Min. Diese Pause wird automatisch abgezogen – "
+        + "du musst nichts bestätigen und nichts stempeln."),
+
+      h("div", { class: "seg", style: "margin-bottom:8px" },
+        h("button", { type: "button", "aria-pressed": s.breakMode === "min" ? "true" : "false",
+          onclick: () => set({ breakMode: "min" }) }, "Mindestens ansetzen"),
+        h("button", { type: "button", "aria-pressed": s.breakMode === "add" ? "true" : "false",
+          onclick: () => set({ breakMode: "add" }) }, "Immer zusätzlich")),
+      h("div", { class: "note", style: "margin-top:0" },
+        s.breakMode === "min"
+          ? "Wenn zwischen zwei Zeiträumen ohnehin eine längere Lücke liegt – etwa die "
+            + "Fahrt von der Firma nach Hause –, ist die Pause damit schon abgedeckt. "
+            + "Es wird nur abgezogen, was zu " + firmBreak + " Min. noch fehlt."
+          : "Die " + firmBreak + " Min. gehen zusätzlich zu jeder Lücke ab. Wähle das nur, "
+            + "wenn dein Betrieb die Pause auch dann abzieht, wenn du zwischendurch "
+            + "ausgestempelt warst."),
+
       h("div", { class: "switch", style: "margin-top:10px" },
         h("div", { class: "txt" },
           h("b", null, "Gesetzliche Mindestpause erzwingen"),
           h("small", null, "Über 6 Std. mindestens 30 Min., über 9 Std. mindestens 45 Min. "
-            + "Fehlende Pausenzeit wird von der Arbeitszeit abgezogen.")),
+            + "Greift nur an langen Tagen, an denen " + firmBreak + " Min. nicht reichen.")),
         h("input", { type: "checkbox", checked: s.enforceLegalBreaks,
           onchange: e => set({ enforceLegalBreaks: e.target.checked }) }))),
 
@@ -104,6 +121,10 @@ function render(){
         h("select", { id: "dp", onchange: e => set({ defaultPlace: e.target.value }) },
           PLACES.map(p => h("option", { value: p.id, selected: p.id === s.defaultPlace },
             p.icon + "  " + p.label))))),
+
+    ),
+
+    h("div", { class: "col" },
 
     /* ---- Zeitkonto ---- */
     h("div", { class: "card" },
@@ -160,6 +181,8 @@ function render(){
       h("div", { class: "note" },
         Object.keys(state.days).length + " erfasste Tage. Alles liegt nur auf diesem Gerät – "
         + "mach ab und zu eine Sicherung.")),
+
+    ),
 
     /* ---- Rechtliches ---- */
     h("details", { class: "acc" },

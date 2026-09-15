@@ -12,8 +12,9 @@ export const DEFAULTS = {
   weeklyHours: 35,
   workdays: [1, 2, 3, 4, 5],
   dailyOverrides: {},
-  breakMode: "gaps",            // "gaps" = Pause ist die Luecke, "flat" = Pauschale
-  flatBreak: 45,
+  breakMode: "min",             // "min" = mindestens ansetzen, "add" = immer zusaetzlich
+  breakfast: 15,                // Fruehstueckspause in Minuten
+  lunch: 30,                    // Mittagspause in Minuten
   enforceLegalBreaks: true,
   earliestStart: "06:00",       // Firmenregel: davor gestempelte Zeit zaehlt nicht
   latestEnd: "",
@@ -43,7 +44,17 @@ function sanitizeSettings(s){
   out.workdays = Array.isArray(out.workdays)
     ? out.workdays.map(Number).filter(n => n >= 0 && n <= 6).sort()
     : DEFAULTS.workdays.slice();
-  out.flatBreak = Math.min(240, Math.max(0, +out.flatBreak || 0));
+  // Aus der ersten Fassung dieser App: eine einzelne Pauschale.
+  if (s && s.flatBreak != null && s.breakfast == null && s.lunch == null) {
+    const f = Math.max(0, +s.flatBreak || 0);
+    out.breakfast = f >= 45 ? 15 : 0;
+    out.lunch = f - out.breakfast;
+  }
+  out.breakfast = Math.min(240, Math.max(0, +out.breakfast || 0));
+  out.lunch = Math.min(240, Math.max(0, +out.lunch || 0));
+  if (out.breakMode !== "add") out.breakMode = "min";
+  delete out.flatBreak;
+  delete out.companyBreak;
   out.carryOver = Math.round(+out.carryOver || 0);
   out.vacationPerYear = Math.max(0, +out.vacationPerYear || 0);
   out.dailyOverrides = out.dailyOverrides && typeof out.dailyOverrides === "object" ? out.dailyOverrides : {};
@@ -93,7 +104,8 @@ function migrateLegacy(){
   const bf = parseInt(old.bf, 10), lu = parseInt(old.lu, 10);
   const s = Object.assign({}, DEFAULTS);
   if (isFinite(soll) && soll > 0) s.weeklyHours = Math.round(soll * 5 * 100) / 100;
-  if (isFinite(bf) || isFinite(lu)) s.flatBreak = (isFinite(bf) ? bf : 0) + (isFinite(lu) ? lu : 0);
+  if (isFinite(bf)) s.breakfast = bf;
+  if (isFinite(lu)) s.lunch = lu;
   state.settings = sanitizeSettings(s);
   state.migratedFrom = "v1";
   save();

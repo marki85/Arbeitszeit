@@ -28,6 +28,7 @@ function render(){
   const shown = days.filter(d => d.segments.length || d.type !== "work" || d.target > 0);
 
   fill(root,
+    h("div", { class: "col" },
     h("div", { class: "card" }, totalsGrid(sum),
       h("div", { class: "note", style: "text-align:center" },
         sum.untracked > 0
@@ -40,7 +41,6 @@ function render(){
       kv("Pausen", fmtShort(sum.breaks)),
       kv("Urlaub", fmtNum(sum.vacation) + (sum.vacation === 1 ? " Tag" : " Tage")),
       kv("Krank", fmtNum(sum.sick) + (sum.sick === 1 ? " Tag" : " Tage"))),
-    h("div", { class: "spacer" }),
 
     sum.untracked > 0
       ? h("div", { class: "notice warn" }, h("span", { class: "ico" }, "📝"),
@@ -48,9 +48,9 @@ function render(){
             + "</strong> ohne Eintrag. Diese Tage bleiben beim Zeitkonto außen vor." }))
       : null,
 
-    h("div", { class: "list" }, shown.map(d => dayRow(d, open))),
-    h("div", { class: "spacer" }),
+    h("div", { class: "list" }, shown.map(d => dayRow(d, open)))),
 
+    h("div", { class: "col" },
     placeSplit(sum),
     balanceCard(account, "Zeitkonto Ende " + monthName(state.date),
       "Stand nach dem letzten Tag dieses Monats"),
@@ -66,7 +66,7 @@ function render(){
       h("button", { class: "btn ghost wide", type: "button", onclick: exportMonth },
         "📄  Monat als CSV exportieren"),
       h("div", { class: "note" },
-        "Die Datei öffnet sich in Excel oder Numbers direkt richtig – Semikolon als Trennzeichen.")),
+        "Die Datei öffnet sich in Excel oder Numbers direkt richtig – Semikolon als Trennzeichen."))),
 
     h("div", { class: "foot" }, "Tippe auf einen Tag, um ihn zu bearbeiten.")
   );
