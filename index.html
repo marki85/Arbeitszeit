@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Arbeitszeit</title>
-<meta name="description" content="Arbeitszeiterfassung für 35- und 40-Stunden-Verträge. Läuft offline, speichert nur auf deinem Gerät.">
+<meta name="description" content="Zeigt, wie lange du noch arbeiten musst. Läuft offline, speichert nur auf deinem Gerät.">
 <meta name="theme-color" content="#e7e9ec" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0f1215" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,38 +13,1027 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="css/app.css">
+
+<style>
+/* ===================================================================
+   Arbeitszeit - eine Seite, eine Frage: wie lange muss ich noch?
+   Farbwelt aus Zeiterfassung.1.1, erweitert um einen Dunkelmodus.
+   =================================================================== */
+
+:root{
+  color-scheme:light dark;
+  --ink:#15181c;  --ink-2:#5c636c;
+  --paper:#e7e9ec; --card:#fff; --card-2:#f1f3f5;
+  --line:#d4d8dd; --line-2:#e4e7ea;
+  --petrol:#0e7c7b; --petrol-ink:#0b5f5e; --petrol-soft:#d6ecec;
+  --amber:#b45309; --amber-soft:#f6e4cf;
+  --red:#a52a1a;   --red-soft:#fbe5e2;
+  --blue:#1c3d5e;  --blue-soft:#eef4fb;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#e8ebee; --ink-2:#98a1ab;
+    --paper:#0f1215; --card:#191d22; --card-2:#20252b;
+    --line:#2c333a; --line-2:#242a30;
+    --petrol:#3fb5b2; --petrol-ink:#5fd0cd; --petrol-soft:#13302f;
+    --amber:#e0973f; --amber-soft:#36270f;
+    --red:#e58a7b;   --red-soft:#3a1a15;
+    --blue:#9dc4e8;  --blue-soft:#15232f;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e8ebee; --ink-2:#98a1ab;
+  --paper:#0f1215; --card:#191d22; --card-2:#20252b;
+  --line:#2c333a; --line-2:#242a30;
+  --petrol:#3fb5b2; --petrol-ink:#5fd0cd; --petrol-soft:#13302f;
+  --amber:#e0973f; --amber-soft:#36270f;
+  --red:#e58a7b;   --red-soft:#3a1a15;
+  --blue:#9dc4e8;  --blue-soft:#15232f;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);background:var(--paper);color:var(--ink);
+  line-height:1.45;min-height:100dvh;-webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px);
+  display:flex;justify-content:center;
+}
+.wrap{width:100%;max-width:480px;padding-top:20px}
+
+/* Die Karten liegen in zwei Spalten-Behaeltern. Auf dem Handy loesen die sich
+   auf (display:contents) und alles steht untereinander; am Rechner werden
+   daraus feste Spalten, damit die Seite ohne Scrollen auf den Schirm passt.
+   Feste Spalten statt CSS-Mehrspaltensatz: sonst verteilt der Browser die
+   Karten bei jedem Spruchwechsel neu und sie springen. */
+.col{display:contents}
+#notices:empty{display:none}
+
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+         color:var(--ink-2);margin-bottom:3px}
+h1{font-size:22px;font-weight:680;letter-spacing:-.01em;margin-bottom:16px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+      padding:16px;margin-bottom:12px}
+
+/* ---------- Eingabe ---------- */
+.startrow{display:flex;gap:10px;align-items:flex-end}
+.field{flex:1;min-width:0}
+label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+input[type=time]{
+  width:100%;font-family:var(--mono);font-size:30px;font-weight:600;
+  color:var(--ink);background:var(--card);border:1.5px solid var(--line);
+  border-radius:10px;padding:9px 11px;font-variant-numeric:tabular-nums;
+}
+input[type=number]{
+  width:100%;font-family:var(--mono);font-size:18px;font-weight:600;
+  color:var(--ink);background:var(--card);border:1.5px solid var(--line);
+  border-radius:10px;padding:9px 11px;font-variant-numeric:tabular-nums;
+}
+input:focus-visible,select:focus-visible,summary:focus-visible,.btn:focus-visible,
+.spruch:focus-visible,.seg button:focus-visible{
+  outline:none;border-color:var(--petrol);box-shadow:0 0 0 3px var(--petrol-soft);
+}
+.btn{
+  font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);
+  border-radius:10px;padding:13px 18px;white-space:nowrap;
+}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--card);color:var(--ink);border-color:var(--line)}
+.btn.small{font-size:13px;padding:9px 12px}
+.btn.wide{width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* Soll-Zeile: Zahlenfeld plus Schnellwahl fuer die zwei ueblichen Vertraege */
+.sollrow{display:flex;gap:8px}
+.sollrow input{flex:1 1 0;min-width:0}
+.sollrow .btn{flex:0 0 auto;padding:9px 12px;font-size:14px}
+.sollrow .btn[aria-pressed="true"]{border-color:var(--petrol);background:var(--petrol-soft);
+  color:var(--petrol-ink)}
+
+/* Unterbrechung: unauffaellige Zeile unten in der Eingabekarte */
+.sub{border-top:1px solid var(--line-2);margin-top:14px}
+.sub>summary{
+  list-style:none;cursor:pointer;padding:12px 0 0;font-size:13.5px;font-weight:600;
+  color:var(--ink-2);display:flex;justify-content:space-between;align-items:center;gap:8px;
+}
+.sub>summary::-webkit-details-marker{display:none}
+.sub[open]>summary{color:var(--ink)}
+.sub .chev{transition:transform .2s;font-size:12px}
+.sub[open] .chev{transform:rotate(180deg)}
+.sub-body{padding-top:12px}
+.sub.set>summary{color:var(--petrol-ink)}
+
+/* ---------- Hauptanzeige ---------- */
+.hero{text-align:center;padding:22px 16px 18px}
+.hero .lbl{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+           color:var(--ink-2)}
+.hero .big{
+  font-family:var(--mono);font-size:64px;line-height:1;font-weight:680;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:10px 0 4px;
+}
+.hero .big.over{color:var(--amber)}
+.hero .sub2{font-size:14px;color:var(--ink-2)}
+
+/* Der Balken */
+.bar-wrap{margin-top:20px}
+.bar{position:relative;height:16px;background:var(--card-2);
+     border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar-fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:999px;
+          background:var(--petrol);transition:width .5s ease}
+.bar-fill.full{background:linear-gradient(90deg,var(--petrol) 0 78%,var(--amber))}
+.tick{position:absolute;top:0;bottom:0;width:1px;background:var(--line);opacity:.9}
+.bar-legend{display:flex;justify-content:space-between;align-items:baseline;
+            margin-top:7px;font-size:12px;color:var(--ink-2)}
+.bar-legend .pct{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--ink);
+                 font-variant-numeric:tabular-nums}
+.bar-legend .t{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* Zweiter, schmaler Balken fuer die Ueberstunden */
+.ot-wrap{margin-top:12px}
+.ot{position:relative;height:7px;background:var(--card-2);border:1px solid var(--line);
+    border-radius:999px;overflow:hidden}
+.ot-fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--amber);
+         border-radius:999px;transition:width .5s ease}
+.ot-legend{display:flex;justify-content:space-between;margin-top:5px;
+           font-size:11.5px;color:var(--ink-2)}
+
+.pill{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  font-size:14px;font-weight:600;padding:8px 15px;border-radius:999px;
+  background:var(--petrol-soft);color:var(--petrol-ink);
+}
+.pill.over{background:var(--amber-soft);color:var(--amber)}
+.pill.idle{background:var(--card-2);color:var(--ink-2)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.pill.live .dot{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ---------- Spruch ---------- */
+.spruch{
+  background:linear-gradient(180deg,var(--amber-soft),
+            color-mix(in srgb,var(--amber-soft) 78%,var(--card)));
+  border-color:color-mix(in srgb,var(--amber) 28%,transparent);
+  position:relative;cursor:pointer;padding:16px 16px 27px;text-align:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.spruch-txt{
+  font-size:16.5px;font-weight:640;line-height:1.4;color:var(--amber);
+  /* Zwei Zeilen fest reserviert, damit die Karte bei jedem neuen Spruch
+     gleich hoch bleibt und nichts darunter verrutscht. */
+  min-height:2.8em;display:flex;align-items:center;justify-content:center;
+}
+.spruch-hint{position:absolute;left:0;right:0;bottom:8px;font-size:10.5px;
+             font-weight:600;color:var(--amber);opacity:.65}
+.confetti{position:fixed;top:-40px;z-index:50;pointer-events:none;will-change:transform;
+          animation:fall 2.6s linear forwards}
+@keyframes fall{to{transform:translateY(112vh) rotate(400deg);opacity:.15}}
+
+/* ---------- Hinweise ---------- */
+.notice{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);
+        border-radius:12px;background:var(--card);padding:11px 13px;margin-bottom:12px;
+        font-size:13.5px;line-height:1.5}
+.notice .ico{flex:none;font-size:15px;line-height:1.35}
+.notice.info{background:var(--blue-soft);color:var(--blue);
+             border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+.notice.warn{background:var(--amber-soft);color:var(--amber);
+             border-color:color-mix(in srgb,var(--amber) 35%,transparent)}
+.notice.stop{background:var(--red-soft);color:var(--red);
+             border-color:color-mix(in srgb,var(--red) 35%,transparent)}
+.notice strong{font-weight:700}
+
+/* ---------- Kennzahlen ---------- */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+      border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.cell{background:var(--card);padding:12px 13px}
+.cell .k{font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.cell .v{font-family:var(--mono);font-size:20px;font-weight:600;margin-top:2px;
+         font-variant-numeric:tabular-nums}
+.cell .v.pos{color:var(--petrol-ink)}
+
+/* ---------- Ausklappbares ---------- */
+details.acc{border:1px solid var(--line);border-radius:12px;background:var(--card);
+            margin-bottom:12px}
+details.acc>summary{list-style:none;cursor:pointer;padding:14px 16px;font-size:14px;
+  font-weight:600;display:flex;justify-content:space-between;align-items:center}
+details.acc>summary::-webkit-details-marker{display:none}
+details.acc>summary .chev{color:var(--ink-2);transition:transform .2s;font-size:12px}
+details.acc[open]>summary .chev{transform:rotate(180deg)}
+.acc-body{padding:0 16px 16px}
+.row-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.note{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:8px}
+
+.seg{display:flex;gap:4px;background:var(--card-2);border:1px solid var(--line);
+     border-radius:10px;padding:3px;margin-bottom:4px}
+.seg button{flex:1;font-family:var(--sans);font-size:13px;font-weight:600;border:none;
+  background:transparent;color:var(--ink-2);padding:8px 6px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);
+  box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;
+        padding:11px 0;border-top:1px solid var(--line-2)}
+.switch .txt b{display:block;font-size:14px;font-weight:600}
+.switch .txt small{display:block;font-size:12px;color:var(--ink-2);margin-top:1px}
+.switch input[type=checkbox]{flex:none;width:44px;height:26px;appearance:none;cursor:pointer;
+  background:var(--line);border-radius:999px;position:relative;transition:background .18s}
+.switch input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;
+  width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s;
+  box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch input[type=checkbox]:checked{background:var(--petrol)}
+.switch input[type=checkbox]:checked::after{transform:translateX(18px)}
+
+.legal{font-size:13px;line-height:1.6}
+.legal h3{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+          color:var(--ink-2);margin:14px 0 6px}
+.legal h3:first-child{margin-top:0}
+.legal p{margin-bottom:8px}
+
+.foot{text-align:center;font-size:13px;color:var(--ink-2);margin-top:18px;line-height:1.6}
+.foot .credit{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);
+  font-size:14.5px;line-height:1.55;color:var(--ink);font-weight:600}
+.foot .credit strong{font-weight:760}
+
+/* ---------- Grosser Bildschirm: zwei Spalten, kein Scrollen ---------- */
+@media (min-width:820px){
+  body{padding-left:24px;padding-right:24px}
+  .wrap{max-width:920px;padding-top:26px}
+  h1{margin-bottom:18px}
+
+  .main{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;align-items:start}
+  .main>.col{display:flex;flex-direction:column;min-width:0}
+
+  /* Etwas kompakter, damit alles zusammen auf einen Laptop-Schirm passt. */
+  .hero{padding:20px 16px 16px}
+  .hero .big{font-size:58px;margin:8px 0 3px}
+  .bar-wrap{margin-top:17px}
+  .pill{margin-top:13px}
+  .foot{margin-top:22px}
+}
+
+@media (hover:hover){
+  .btn:hover{filter:brightness(1.06)}
+  .spruch:hover{filter:brightness(1.02)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
+<div class="wrap">
 
-<header class="topbar">
-  <div class="inner">
-    <button class="nav-btn" id="navPrev" aria-label="Zurück">‹</button>
-    <div class="title">
-      <div class="t1" id="navTitle">Arbeitszeit</div>
-      <div class="t2" id="navSub"></div>
+  <div class="eyebrow" id="eyebrow">Arbeitszeit</div>
+  <h1>Wie lange muss ich noch?</h1>
+
+  <div class="main">
+  <div class="col">
+
+  <!-- ---------- Eingabe ---------- -->
+  <div class="card">
+    <div class="startrow">
+      <div class="field">
+        <label for="start">Arbeitsbeginn</label>
+        <input type="time" id="start" value="08:00">
+      </div>
+      <button class="btn" id="now" type="button">Jetzt</button>
     </div>
-    <button class="nav-btn" id="navNext" aria-label="Weiter">›</button>
+
+    <details class="sub" id="uAcc">
+      <summary><span id="uSummary">Unterbrechung eintragen</span><span class="chev">▾</span></summary>
+      <div class="sub-body">
+        <div class="two">
+          <div class="field">
+            <label for="uFrom">von</label>
+            <input type="time" id="uFrom">
+          </div>
+          <div class="field">
+            <label for="uTo">bis</label>
+            <input type="time" id="uTo">
+          </div>
+        </div>
+        <p class="note">Zum Beispiel die Fahrt von der Firma nach Hause. Deine
+          <span id="uPause">45</span> Minuten Pause sind damit schon abgedeckt –
+          erst eine längere Unterbrechung verschiebt den Feierabend.</p>
+        <button class="btn ghost small wide" id="uClear" type="button"
+                style="margin-top:10px">Unterbrechung löschen</button>
+      </div>
+    </details>
   </div>
-</header>
 
-<main class="wrap" id="view" style="padding-top:12px"></main>
+  <!-- ---------- Hauptanzeige ---------- -->
+  <div class="card hero">
+    <div class="lbl" id="heroLbl">Noch zu arbeiten</div>
+    <div class="big" id="heroBig">—</div>
+    <div class="sub2" id="heroSub">Feierabend um —</div>
 
-<nav class="tabbar" aria-label="Hauptnavigation">
-  <div class="inner">
-    <button class="tab" data-view="day"      aria-current="page"><span class="ic">⏱️</span>Tag</button>
-    <button class="tab" data-view="week"><span class="ic">📅</span>Woche</button>
-    <button class="tab" data-view="month"><span class="ic">📊</span>Monat</button>
-    <button class="tab" data-view="settings"><span class="ic">⚙️</span>Mehr</button>
+    <div class="bar-wrap">
+      <div class="bar">
+        <div class="bar-fill" id="barFill"></div>
+        <div class="tick" style="left:25%"></div>
+        <div class="tick" style="left:50%"></div>
+        <div class="tick" style="left:75%"></div>
+      </div>
+      <div class="bar-legend">
+        <span class="t" id="barStart">—</span>
+        <span class="pct" id="barPct">0 %</span>
+        <span class="t" id="barEnd">—</span>
+      </div>
+    </div>
+
+    <div class="ot-wrap" id="otWrap" hidden>
+      <div class="ot"><div class="ot-fill" id="otFill"></div></div>
+      <div class="ot-legend">
+        <span>Überstunden</span>
+        <span class="t" id="otTxt">0:00</span>
+      </div>
+    </div>
+
+    <div class="pill" id="pill"><span class="dot"></span><span id="pillTxt">—</span></div>
   </div>
-</nav>
 
-<noscript>
-  <div class="wrap" style="padding-top:20px">
-    <div class="notice stop"><span class="ico">🛑</span><span>Diese App braucht JavaScript.</span></div>
+  </div><!-- /col -->
+  <div class="col">
+
+  <div class="card spruch" id="spruchCard" role="button" tabindex="0"
+       title="Antippen für einen neuen Spruch">
+    <div class="spruch-txt" id="spruch"></div>
+    <div class="spruch-hint">antippen für einen neuen Spruch</div>
   </div>
-</noscript>
 
-<script type="module" src="js/app.js"></script>
+  <div id="notices"></div>
+
+  <div class="grid">
+    <div class="cell"><div class="k">Anwesend</div><div class="v" id="vPresent">—</div></div>
+    <div class="cell"><div class="k">Gearbeitet</div><div class="v" id="vNet">—</div></div>
+    <div class="cell"><div class="k">Pause</div><div class="v" id="vBreak">—</div></div>
+    <div class="cell"><div class="k">Überstunden</div><div class="v" id="vOver">—</div></div>
+  </div>
+
+  <!-- ---------- Einstellungen ---------- -->
+  <details class="acc">
+    <summary>Einstellungen <span class="chev">▾</span></summary>
+    <div class="acc-body">
+      <div class="field" style="margin-bottom:12px">
+        <label for="soll">Soll pro Tag (Stunden)</label>
+        <div class="sollrow">
+          <input type="number" id="soll" min="0" max="10" step="0.25" inputmode="decimal" value="7">
+          <button class="btn ghost" type="button" data-soll="7">7 Std.</button>
+          <button class="btn ghost" type="button" data-soll="8">8 Std.</button>
+        </div>
+        <p class="note" id="sollNote" style="margin-top:7px"></p>
+      </div>
+      <div class="row-fields">
+        <div class="field">
+          <label for="bf">Frühstück (Min.)</label>
+          <input type="number" id="bf" min="0" max="120" step="5" inputmode="numeric" value="15">
+        </div>
+        <div class="field">
+          <label for="lu">Mittag (Min.)</label>
+          <input type="number" id="lu" min="0" max="120" step="5" inputmode="numeric" value="30">
+        </div>
+      </div>
+      <div class="field">
+        <label for="early">Frühester Beginn</label>
+        <input type="time" id="early" value="06:00" style="font-size:18px">
+      </div>
+      <p class="note" style="margin-top:0" id="setNote"></p>
+
+      <div style="margin-top:14px">
+        <label>Darstellung</label>
+        <div class="seg" id="themeSeg" role="group" aria-label="Darstellung">
+          <button type="button" data-theme="auto" aria-pressed="true">Automatisch</button>
+          <button type="button" data-theme="light" aria-pressed="false">Hell</button>
+          <button type="button" data-theme="dark" aria-pressed="false">Dunkel</button>
+        </div>
+      </div>
+
+      <div class="switch">
+        <div class="txt"><b>Sprüche anzeigen</b><small>Der kleine Spruch über dem Balken.</small></div>
+        <input type="checkbox" id="optSprueche" checked>
+      </div>
+      <div class="switch">
+        <div class="txt"><b>Konfetti zum Feierabend</b><small>Wenn das Soll voll ist.</small></div>
+        <input type="checkbox" id="optKonfetti" checked>
+      </div>
+
+      <button class="btn ghost small wide" id="reset" type="button" style="margin-top:14px">
+        Auf Standard zurücksetzen</button>
+    </div>
+  </details>
+
+  <details class="acc">
+    <summary>Impressum &amp; Datenschutz <span class="chev">▾</span></summary>
+    <div class="acc-body legal">
+      <h3>Impressum</h3>
+      <p>Privates, nicht-kommerzielles Hobbyprojekt.<br>
+         Verantwortlich für den Inhalt: <strong>Markus Schulz</strong></p>
+      <p>Dieser Rechner dient der eigenen Orientierung. <strong>Alle Angaben ohne
+         Gewähr</strong> – verbindlich ist immer die offizielle Zeiterfassung des
+         Arbeitgebers.</p>
+
+      <h3>Datenschutz</h3>
+      <p>Diese Seite erhebt <strong>keine personenbezogenen Daten</strong>. Es gibt keine
+         Cookies, kein Tracking, keine Analyse-Werkzeuge und keine Weitergabe an Dritte.</p>
+      <p>Alle Eingaben werden ausschließlich <strong>lokal auf deinem Gerät</strong> im
+         Browser gespeichert und niemals versendet. Löschen kannst du sie jederzeit über
+         die Browser-Daten deines Geräts.</p>
+      <p>Wird die Seite über <strong>GitHub Pages</strong> aufgerufen, verarbeitet GitHub
+         Inc. beim Abruf technisch notwendige Server-Daten – darunter die
+         <strong>IP-Adresse</strong>. Darauf hat der Betreiber dieser Seite keinen Einfluss
+         und keinen Zugriff. Einmal geladen, läuft die Seite offline.</p>
+    </div>
+  </details>
+
+  </div><!-- /col -->
+  </div><!-- /main -->
+
+  <div class="foot">
+    iPhone: Teilen-Symbol → „Zum Home-Bildschirm“.
+    <div class="credit">
+      Mit freundlicher Unterstützung von <strong>Markus Schulz</strong>.<br>
+      Alle Angaben ohne Gewähr.
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =====================================================================
+   1. Kleine Helfer
+   ===================================================================== */
+
+var $ = function(id){ return document.getElementById(id); };
+
+function pad2(n){ return (n < 10 ? "0" : "") + n; }
+
+/** "08:30" -> 510 Minuten seit Mitternacht. Ungueltiges -> null. */
+function toMin(t){
+  if (!t) return null;
+  var m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim());
+  if (!m) return null;
+  var h = +m[1], mm = +m[2];
+  if (h > 23 || mm > 59) return null;
+  return h * 60 + mm;
+}
+/** 510 -> "08:30" */
+function fmtClock(min){
+  var m = Math.round(min);
+  m = ((m % 1440) + 1440) % 1440;
+  return pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
+}
+/** 135 -> "2 Std. 15 Min." */
+function fmtDur(min){
+  var m = Math.max(0, Math.round(min));
+  return Math.floor(m / 60) + " Std. " + pad2(m % 60) + " Min.";
+}
+/** 135 -> "2:15" */
+function fmtShort(min){
+  var m = Math.max(0, Math.round(min));
+  return Math.floor(m / 60) + ":" + pad2(m % 60);
+}
+/** 135 -> "2:15 h" */
+function fmtH(min){ return fmtShort(min) + " h"; }
+/** 7 -> "7", 7.5 -> "7,5" */
+function fmtNum(n){
+  if (!isFinite(n)) return "0";
+  var s = (Math.round(n * 100) / 100).toFixed(2);
+  if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+  return s.replace(".", ",");
+}
+function nowMin(){
+  var d = new Date();
+  return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+}
+function nowClock(){
+  var d = new Date();
+  return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+function todayKey(){
+  var d = new Date();
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+
+/* =====================================================================
+   2. Sprueche
+   ===================================================================== */
+
+var SPRUECHE = {
+    "empty": [
+      "Trag deine Startzeit ein, den Rest übernehme ich.",
+      "Erst die Zeit, dann der Kaffee. Oder umgekehrt. ☕",
+      "Sag mir, wann du angefangen hast – ich zähl den Rest.",
+      "Ohne Startzeit kein Feierabend. So sind die Regeln. 🙂",
+      "Eine Zahl von dir, den Rest mache ich."
+    ],
+    "future": [
+      "Startzeit liegt noch vor dir – ganz entspannt.",
+      "Noch nicht dran? Genieß die Ruhe vor der Schicht. 😌",
+      "Die Zukunft kommt früh genug. Kaffee first. ☕",
+      "Gut vorbereitet ist halb gestempelt."
+    ],
+    "morning": [
+      "Guten Morgen! Erst der Kaffee, dann der Rest. ☕",
+      "Motor läuft, Kaffee dampft – läuft bei dir.",
+      "Jede große Schicht beginnt mit dem ersten Klick. 💪",
+      "Noch etwas verschlafen? Der Tag wächst sich schon aus.",
+      "Der frühe Vogel darf auch erst ab 6 zählen. 🐦",
+      "Guten Start! Der Rest ergibt sich.",
+      "Ein Tag, ein Plan, ein Kaffee. In beliebiger Reihenfolge.",
+      "Morgens ist die Uhr am langsamsten. Das gibt sich. ⏳",
+      "Frisch gestempelt hält besser. 😄",
+      "Die ersten Minuten sind immer die zähesten. Danach fliegt's."
+    ],
+    "mid": [
+      "Du bist voll im Flow – weiter so!",
+      "Läuft. Nicht schnell, aber es läuft. 😄",
+      "Ein Häkchen nach dem anderen. Du machst das gut.",
+      "Halbzeit rückt näher – stark unterwegs!",
+      "Solide Arbeit. Genau so.",
+      "Mittendrin statt nur dabei. 💪",
+      "Der Vormittag ist gepackt. Respekt.",
+      "Kleine Pause? Der Kopf dankt's dir später. ☕",
+      "Konstant ist besser als hektisch. Du hast das im Griff.",
+      "Die Uhr läuft für dich, nicht gegen dich. ⏱️",
+      "Schritt für Schritt. So werden Stunden voll.",
+      "Zwischendurch mal aufstehen – der Rücken sagt danke. 🙂"
+    ],
+    "stretch": [
+      "Zielgerade in Sicht – der Feierabend winkt schon. 👋",
+      "Nur noch ein kleines Stück – halt durch!",
+      "Der Kaffee war's wert. Fast geschafft!",
+      "Du siehst das Licht am Ende der Schicht. ✨",
+      "Das Schwerste liegt hinter dir.",
+      "Nachmittags-Durchhänger? Völlig normal. Weiter geht's.",
+      "Noch ein Stück – dann gehört der Tag wieder dir.",
+      "Gleich ist die Kuh vom Eis. 🐄",
+      "Letztes Drittel. Da kommst du locker durch."
+    ],
+    "endspurt": [
+      "Endspurt! 🏁 Gleich ist das Soll voll.",
+      "Letzte Minuten – Jacke schon mal bereitlegen. 😉",
+      "Gleich klingelt der Feierabend. Durchhalten!",
+      "So kurz vor dem Ziel gibt keiner mehr auf. 🚀",
+      "Countdown läuft. Du hast es gleich. ⏰",
+      "Noch ein Wimpernschlag, dann ist Schluss.",
+      "Die Ziellinie ist zum Greifen nah. 🎯",
+      "Gleich geschafft – nicht mehr ablenken lassen. 😄"
+    ],
+    "done": [
+      "Feierabend! 🎉 Rechner aus, Leben an.",
+      "Geschafft! Das Soll steht. Genieß den Abend. 🙌",
+      "Soll erfüllt – du darfst jetzt offiziell nichts mehr tun. 😎",
+      "Gut gemacht! Der Rest des Tages gehört dir.",
+      "Punktlandung. Ab nach Hause! 🏡",
+      "Tagwerk vollbracht. Verdient. 👏",
+      "Erledigt. Der Stuhl darf jetzt abkühlen. 😄",
+      "Ende der Vorstellung. Applaus für dich. 🎭"
+    ],
+    "overtime": [
+      "Überstunde läuft – das kommt aufs Konto. 💪",
+      "Extra-Zeit = Extra-Einsatz. Aber übertreib's nicht. 😉",
+      "Jede Minute zählt jetzt fürs Zeitkonto. 📈",
+      "Fleißig! Aber denk auch mal an deinen Feierabend. 🕗",
+      "Das Konto füllt sich. Irgendwann willst du's auch abfeiern. 🙂",
+      "Bonuszeit. Freiwillig ist das schönste Wort dabei.",
+      "Noch da? Dann wenigstens sauber aufschreiben. 📝",
+      "Überstunden sind wie Kaffee: in Maßen prima. ☕"
+    ],
+    "limit": [
+      "10 Stunden. Jetzt ist wirklich gut. 🛑",
+      "Schicht im Schacht – der Rest wartet bis morgen.",
+      "Grenze erreicht. Ab hier gewinnt niemand mehr. 🏁",
+      "Feierabend ist keine Schwäche, sondern Vorschrift. 🙂"
+    ],
+    "pause": [
+      "Pause läuft – Bildschirm aus, Kopf frei. ☕",
+      "Gut so. Pausen sind Arbeitsschutz, kein Luxus.",
+      "Kurz durchatmen. Die Uhr wartet solange.",
+      "Mahlzeit! 🍽️",
+      "Pause ist der Teil des Tages, den man nicht wegoptimiert."
+    ]
+  };
+
+var spruchNudge = 0, lastSpruch = null;
+function setSpruch(phase){
+  var pool = SPRUECHE[phase] || SPRUECHE.empty;
+  var txt = pool[(Math.floor(Date.now() / 20000) + spruchNudge) % pool.length];
+  if (txt !== lastSpruch){ $("spruch").textContent = txt; lastSpruch = txt; }
+}
+
+var reduceMotion = window.matchMedia
+  && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function celebrate(){
+  if (reduceMotion) return;
+  var icons = ["🎉","✨","🎊","🥳","☕","🙌"];
+  for (var i = 0; i < 22; i++){
+    var s = document.createElement("div");
+    s.className = "confetti";
+    s.textContent = icons[Math.floor(Math.random() * icons.length)];
+    s.style.left = (Math.random() * 100) + "vw";
+    s.style.animationDelay = (Math.random() * 0.5) + "s";
+    s.style.fontSize = (16 + Math.random() * 18) + "px";
+    document.body.appendChild(s);
+    (function(el){ setTimeout(function(){ el.remove(); }, 3200); })(s);
+  }
+}
+
+/* =====================================================================
+   3. Speicher - nur dieses Geraet, nichts verlaesst den Browser
+   ===================================================================== */
+
+var KEY = "arbeitszeit.v2";
+var STANDARD = {
+  start: "08:00", uFrom: "", uTo: "",
+  soll: 7, bf: 15, lu: 30, early: "06:00",
+  theme: "auto", sprueche: true, konfetti: true
+};
+var cfg = {};
+for (var k in STANDARD) cfg[k] = STANDARD[k];
+
+function load(){
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(KEY)); } catch(e){}
+
+  if (raw){
+    for (var k in STANDARD) if (raw[k] != null) cfg[k] = raw[k];
+    // Ein neuer Tag faengt leer an - sonst steht morgens noch die Startzeit
+    // von vorgestern da. Die Einstellungen bleiben selbstverstaendlich.
+    if (raw.date !== todayKey()){
+      cfg.start = STANDARD.start; cfg.uFrom = ""; cfg.uTo = "";
+    }
+    return;
+  }
+  uebernehmen();
+}
+
+/** Einstellungen aus frueheren Fassungen uebernehmen, damit nichts neu
+    eingetippt werden muss. */
+function uebernehmen(){
+  // Die grosse Zwischenfassung
+  try {
+    var v2 = JSON.parse(localStorage.getItem("zeiterfassung.v2"));
+    if (v2 && v2.settings){
+      var s = v2.settings;
+      if (s.weeklyHours > 0 && (s.workdays || []).length){
+        cfg.soll = Math.round(s.weeklyHours / s.workdays.length * 100) / 100;
+      }
+      if (s.breakfast != null) cfg.bf = s.breakfast;
+      if (s.lunch != null) cfg.lu = s.lunch;
+      if (s.earliestStart) cfg.early = s.earliestStart;
+      if (s.theme) cfg.theme = s.theme;
+      if (s.sprueche != null) cfg.sprueche = !!s.sprueche;
+      if (s.confetti != null) cfg.konfetti = !!s.confetti;
+      return;
+    }
+  } catch(e){}
+  // Die allererste Fassung (Zeiterfassung.1.1)
+  try {
+    var v1 = JSON.parse(localStorage.getItem("arbeitszeit.v1"));
+    if (v1){
+      if (parseFloat(v1.soll) > 0) cfg.soll = parseFloat(v1.soll);
+      if (isFinite(parseInt(v1.bf, 10))) cfg.bf = parseInt(v1.bf, 10);
+      if (isFinite(parseInt(v1.lu, 10))) cfg.lu = parseInt(v1.lu, 10);
+    }
+  } catch(e){}
+}
+
+function save(){
+  try {
+    var out = { date: todayKey() };
+    for (var k in STANDARD) out[k] = cfg[k];
+    localStorage.setItem(KEY, JSON.stringify(out));
+  } catch(e){ /* privater Modus - dann gilt es nur fuer diese Sitzung */ }
+}
+
+/* =====================================================================
+   4. Die Rechnung
+   ===================================================================== */
+
+function rechne(){
+  var soll  = Math.round(clamp(+cfg.soll || 0, 0, 10) * 60);
+  var pauseSoll = clamp(+cfg.bf || 0, 0, 120) + clamp(+cfg.lu || 0, 0, 120);
+
+  var startRaw = toMin(cfg.start);
+  if (startRaw == null) return { leer: true, soll: soll, pauseSoll: pauseSoll };
+
+  // Firmenregel: vor der fruehesten Zeit gestempelt zaehlt erst ab dieser.
+  var early = toMin(cfg.early);
+  var geklemmt = early != null && startRaw < early;
+  var start = geklemmt ? early : startRaw;
+
+  // Unterbrechung - eine laengere Luecke deckt die Pause bereits ab,
+  // deshalb das Maximum und nicht die Summe.
+  var uF = toMin(cfg.uFrom), uT = toMin(cfg.uTo);
+  var unterbrechung = (uF != null && uT != null && uT > uF) ? uT - uF : 0;
+  var pause = Math.max(pauseSoll, unterbrechung);
+
+  var feierabend = start + soll + pause;
+  var jetzt = nowMin();
+
+  var anwesend   = jetzt - start;
+  var gearbeitet = Math.max(0, anwesend - pause);
+  var noch       = feierabend - jetzt;
+  var ueber      = Math.max(0, gearbeitet - soll);
+
+  var spanne = feierabend - start;
+  var fortschritt = spanne > 0 ? clamp((jetzt - start) / spanne, 0, 1) : 0;
+
+  return {
+    leer: false, soll: soll, pauseSoll: pauseSoll, pause: pause,
+    unterbrechung: unterbrechung, geklemmt: geklemmt, startRaw: startRaw,
+    start: start, feierabend: feierabend, jetzt: jetzt,
+    anwesend: anwesend, gearbeitet: gearbeitet, noch: noch, ueber: ueber,
+    fortschritt: fortschritt, fertig: noch <= 0, zukunft: anwesend < 0
+  };
+}
+
+/** Welcher Spruch passt gerade? */
+function phaseOf(r){
+  if (r.leer) return "empty";
+  if (r.zukunft) return "future";
+  if (r.gearbeitet >= 600) return "limit";
+  if (r.fertig) return r.ueber <= 15 ? "done" : "overtime";
+  // Laeuft die eingetragene Unterbrechung gerade?
+  var uF = toMin(cfg.uFrom), uT = toMin(cfg.uTo);
+  if (uF != null && uT != null && r.jetzt >= uF && r.jetzt < uT) return "pause";
+  var p = r.fortschritt;
+  return p < 0.25 ? "morning" : p < 0.6 ? "mid" : p < 0.9 ? "stretch" : "endspurt";
+}
+
+/* =====================================================================
+   5. Anzeige
+   ===================================================================== */
+
+var warFertig = null;
+
+function zeichne(){
+  var r = rechne();
+
+  $("eyebrow").textContent = "Arbeitszeit · " + fmtNum(r.soll / 60)
+    + (r.soll === 60 ? " Stunde" : " Stunden") + " pro Tag";
+
+  /* --- Unterbrechungs-Zeile --- */
+  var uAcc = $("uAcc");
+  if (r.unterbrechung > 0){
+    $("uSummary").textContent = "Unterbrechung " + cfg.uFrom + " – " + cfg.uTo
+      + "  (" + fmtShort(r.unterbrechung) + " h)";
+    uAcc.classList.add("set");
+  } else {
+    $("uSummary").textContent = "Unterbrechung eintragen";
+    uAcc.classList.remove("set");
+  }
+  $("uPause").textContent = String(r.pauseSoll);
+
+  if (r.leer){
+    $("heroLbl").textContent = "Noch zu arbeiten";
+    $("heroBig").textContent = "—";
+    $("heroBig").classList.remove("over");
+    $("heroSub").textContent = "Trag deinen Arbeitsbeginn ein";
+    $("barFill").style.width = "0%";
+    $("barFill").classList.remove("full");
+    $("barPct").textContent = "0 %";
+    $("barStart").textContent = "—";
+    $("barEnd").textContent = "—";
+    $("otWrap").hidden = true;
+    $("pill").className = "pill idle";
+    $("pillTxt").textContent = "Noch keine Startzeit";
+    $("vPresent").textContent = "—";
+    $("vNet").textContent = "—";
+    $("vBreak").textContent = "—";
+    $("vOver").textContent = "—";
+    $("notices").innerHTML = "";
+    if (cfg.sprueche) setSpruch("empty");
+    return;
+  }
+
+  /* --- Grosse Zahl --- */
+  if (r.zukunft){
+    $("heroLbl").textContent = "Es geht los um";
+    $("heroBig").textContent = fmtClock(r.start);
+    $("heroBig").classList.remove("over");
+    $("heroSub").textContent = "Feierabend um " + fmtClock(r.feierabend) + " Uhr";
+  } else if (r.fertig){
+    $("heroLbl").textContent = "Feierabend seit";
+    $("heroBig").textContent = fmtShort(-r.noch);
+    $("heroBig").classList.add("over");
+    $("heroSub").textContent = "Soll war um " + fmtClock(r.feierabend) + " Uhr voll";
+  } else {
+    $("heroLbl").textContent = "Noch zu arbeiten";
+    $("heroBig").textContent = fmtShort(r.noch);
+    $("heroBig").classList.remove("over");
+    $("heroSub").textContent = "Feierabend um " + fmtClock(r.feierabend) + " Uhr";
+  }
+
+  /* --- Balken --- */
+  var pct = Math.round(r.fortschritt * 100);
+  $("barFill").style.width = (r.fortschritt * 100) + "%";
+  $("barFill").classList.toggle("full", r.fertig);
+  $("barPct").textContent = pct + " %";
+  $("barStart").textContent = fmtClock(r.start);
+  $("barEnd").textContent = fmtClock(r.feierabend);
+
+  /* --- Ueberstundenbalken (erst ab einer vollen Minute, sonst blitzt er
+         im Moment des Feierabends kurz mit 0:00 auf) --- */
+  if (r.ueber >= 1){
+    $("otWrap").hidden = false;
+    $("otFill").style.width = clamp(r.ueber / 120, 0, 1) * 100 + "%";
+    $("otTxt").textContent = "+" + fmtShort(r.ueber) + " h";
+  } else {
+    $("otWrap").hidden = true;
+  }
+
+  /* --- Statuszeile --- */
+  var pill = $("pill");
+  pill.className = "pill live";
+  if (r.zukunft){
+    pill.className = "pill idle";
+    $("pillTxt").textContent = "Beginn liegt noch vor dir";
+  } else if (r.fertig){
+    pill.className = "pill over live";
+    $("pillTxt").textContent = "Soll erfüllt · +" + fmtDur(r.ueber);
+  } else {
+    $("pillTxt").textContent = "Noch " + fmtDur(r.noch) + " bis Feierabend";
+  }
+
+  /* --- Kennzahlen --- */
+  $("vPresent").textContent = r.zukunft ? "—" : fmtH(r.anwesend);
+  $("vNet").textContent     = r.zukunft ? "—" : fmtH(r.gearbeitet);
+  $("vBreak").textContent   = fmtH(r.pause);
+  $("vOver").textContent    = fmtH(r.ueber);
+  $("vOver").className      = "v" + (r.ueber > 0 ? " pos" : "");
+
+  /* --- Hinweise --- */
+  var hin = [];
+  if (r.geklemmt){
+    hin.push('<div class="notice info"><span class="ico">🕕</span><span>Du hast um <strong>'
+      + fmtClock(r.startRaw) + '</strong> angefangen. Zeiten vor ' + cfg.early
+      + ' werden nicht anerkannt – gerechnet wird ab <strong>' + cfg.early
+      + ' Uhr</strong>.</span></div>');
+  }
+  if (r.unterbrechung > r.pauseSoll){
+    hin.push('<div class="notice info"><span class="ico">🚗</span><span>Die Unterbrechung ist länger als deine '
+      + r.pauseSoll + ' Minuten Pause – der Feierabend verschiebt sich um <strong>'
+      + (r.unterbrechung - r.pauseSoll) + ' Min.</strong> nach hinten.</span></div>');
+  }
+  if (r.gearbeitet >= 600){
+    hin.push('<div class="notice stop"><span class="ico">🛑</span><span><strong>10 Stunden erreicht.</strong> '
+      + 'Mehr lässt das Arbeitszeitgesetz an einem Werktag nicht zu – Schicht im Schacht!</span></div>');
+  } else if (r.gearbeitet >= 570){
+    hin.push('<div class="notice warn"><span class="ico">⏳</span><span>In <strong>'
+      + fmtDur(600 - r.gearbeitet) + '</strong> ist die 10-Stunden-Grenze erreicht (um <strong>'
+      + fmtClock(r.start + 600 + r.pause) + '</strong>). Danach ist Schluss.</span></div>');
+  }
+  $("notices").innerHTML = hin.join("");
+
+  /* --- Spruch & Konfetti --- */
+  if (cfg.sprueche) setSpruch(phaseOf(r));
+
+  if (warFertig === null) warFertig = r.fertig;
+  else if (r.fertig && !warFertig && cfg.konfetti) celebrate();
+  warFertig = r.fertig;
+}
+
+/* =====================================================================
+   6. Bedienung
+   ===================================================================== */
+
+/** Erklaertexte unter dem Soll und unter den Pausen auffrischen. */
+function notizen(){
+  var soll = clamp(+cfg.soll || 0, 0, 10);
+  var pause = clamp(+cfg.bf || 0, 0, 120) + clamp(+cfg.lu || 0, 0, 120);
+  $("sollNote").textContent = "Entspricht " + fmtNum(soll * 5) + " Stunden pro Woche "
+    + "bei 5 Arbeitstagen. Zwischenwerte wie 7,5 gehen auch.";
+  $("setNote").textContent = "Zusammen " + pause
+    + " Min. Pause. Sie gelten als genommen und werden automatisch abgezogen – "
+    + "du musst nichts bestätigen.";
+  Array.prototype.forEach.call(document.querySelectorAll("[data-soll]"), function(b){
+    b.setAttribute("aria-pressed", +b.dataset.soll === soll ? "true" : "false");
+  });
+}
+
+function setTheme(){
+  if (cfg.theme === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", cfg.theme);
+  var btns = $("themeSeg").children;
+  for (var i = 0; i < btns.length; i++){
+    btns[i].setAttribute("aria-pressed", btns[i].dataset.theme === cfg.theme ? "true" : "false");
+  }
+}
+
+function felderFuellen(){
+  $("start").value = cfg.start;
+  $("uFrom").value = cfg.uFrom;
+  $("uTo").value = cfg.uTo;
+  $("soll").value = cfg.soll;
+  $("bf").value = cfg.bf;
+  $("lu").value = cfg.lu;
+  $("early").value = cfg.early;
+  $("optSprueche").checked = !!cfg.sprueche;
+  $("optKonfetti").checked = !!cfg.konfetti;
+  $("spruchCard").hidden = !cfg.sprueche;
+  notizen();
+  setTheme();
+}
+
+function uebernehmenUndZeichnen(){
+  cfg.start = $("start").value;
+  cfg.uFrom = $("uFrom").value;
+  cfg.uTo   = $("uTo").value;
+  cfg.soll  = $("soll").value === "" ? 0 : +$("soll").value;
+  cfg.bf    = $("bf").value === "" ? 0 : +$("bf").value;
+  cfg.lu    = $("lu").value === "" ? 0 : +$("lu").value;
+  cfg.early = $("early").value;
+  cfg.sprueche = $("optSprueche").checked;
+  cfg.konfetti = $("optKonfetti").checked;
+  $("spruchCard").hidden = !cfg.sprueche;
+  notizen();
+  save();
+  zeichne();
+}
+
+["start","uFrom","uTo","soll","bf","lu","early"].forEach(function(id){
+  $(id).addEventListener("input", uebernehmenUndZeichnen);
+  $(id).addEventListener("change", uebernehmenUndZeichnen);
+});
+$("optSprueche").addEventListener("change", uebernehmenUndZeichnen);
+$("optKonfetti").addEventListener("change", uebernehmenUndZeichnen);
+
+/* Schnellwahl 7 / 8 Stunden - der haeufigste Unterschied zwischen
+   einem 35- und einem 40-Stunden-Vertrag. */
+Array.prototype.forEach.call(document.querySelectorAll("[data-soll]"), function(b){
+  b.addEventListener("click", function(){
+    $("soll").value = b.dataset.soll;
+    uebernehmenUndZeichnen();
+  });
+});
+
+$("now").addEventListener("click", function(){
+  $("start").value = nowClock();
+  uebernehmenUndZeichnen();
+});
+
+$("uClear").addEventListener("click", function(){
+  $("uFrom").value = ""; $("uTo").value = "";
+  uebernehmenUndZeichnen();
+  $("uAcc").open = false;
+});
+
+$("themeSeg").addEventListener("click", function(e){
+  var b = e.target.closest("button");
+  if (!b) return;
+  cfg.theme = b.dataset.theme;
+  setTheme(); save();
+});
+
+$("reset").addEventListener("click", function(){
+  if (!confirm("Einstellungen auf Standard zurücksetzen?")) return;
+  cfg.soll = STANDARD.soll; cfg.bf = STANDARD.bf; cfg.lu = STANDARD.lu;
+  cfg.early = STANDARD.early; cfg.theme = STANDARD.theme;
+  cfg.sprueche = STANDARD.sprueche; cfg.konfetti = STANDARD.konfetti;
+  felderFuellen(); save(); zeichne();
+});
+
+function naechsterSpruch(){ spruchNudge++; lastSpruch = null; zeichne(); }
+$("spruchCard").addEventListener("click", naechsterSpruch);
+$("spruchCard").addEventListener("keydown", function(e){
+  if (e.key === "Enter" || e.key === " "){ e.preventDefault(); naechsterSpruch(); }
+});
+
+/* =====================================================================
+   7. Start
+   ===================================================================== */
+
+load();
+felderFuellen();
+zeichne();
+setInterval(zeichne, 1000);
+
+// Zurueck auf der Seite: es koennte ein neuer Tag sein.
+document.addEventListener("visibilitychange", function(){
+  if (document.visibilityState !== "visible") return;
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(KEY)); } catch(e){}
+  if (raw && raw.date !== todayKey()){
+    cfg.start = STANDARD.start; cfg.uFrom = ""; cfg.uTo = "";
+    felderFuellen(); save();
+  }
+  zeichne();
+});
+
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").then(function(reg){
+      reg.update().catch(function(){});
+    }).catch(function(){ /* z. B. als lokale Datei geoeffnet */ });
+  });
+}
+
+})();
+</script>
 </body>
 </html>

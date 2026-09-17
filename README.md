@@ -1,99 +1,64 @@
 # Arbeitszeit
 
-Arbeitszeiterfassung als Web-App. Läuft im Browser am Rechner und auf dem Handy,
-funktioniert offline und speichert **ausschließlich auf deinem Gerät**.
+Beantwortet eine Frage: **Wie lange muss ich noch arbeiten?**
 
-Nachfolger von [Zeiterfassung.1.1](https://github.com/marki85/Zeiterfassung.1.1) –
-aus dem Feierabend-Rechner ist eine vollständige Erfassung geworden.
+Startzeit eintippen – der Balken zeigt, was geschafft ist und was noch fehlt,
+die große Zahl zählt bis zum Feierabend runter. Mehr nicht.
 
-## Was sie kann
+Läuft im Browser am Rechner und auf dem Handy, funktioniert offline und
+speichert ausschließlich auf deinem Gerät.
 
-**Stempeln statt rechnen**
-Ein Knopf für Kommen und Stoppen. Beliebig viele Zeiträume pro Tag, jeder mit
-eigenem Ort: 🏢 Firma, 🏠 Homeoffice, 🚗 Unterwegs. Vormittags in der Firma,
-dann nach Hause fahren und dort weiterarbeiten – die Fahrt dazwischen zählt
-automatisch als Pause.
+## 👉 https://marki85.github.io/Arbeitszeit/
 
-**Jeder Vertrag**
-Wochenstunden frei einstellbar (35 h, 40 h, Teilzeit), Arbeitstage wählbar,
-Tagessoll pro Wochentag einzeln überschreibbar.
-
-**Pausen ohne Zutun**
-Frühstück (15 Min.) und Mittag (30 Min.) werden automatisch abgezogen – nichts
-anhaken, nichts bestätigen, nichts stempeln. Liegt zwischen zwei Zeiträumen
-ohnehin eine längere Lücke, etwa die Fahrt von der Firma nach Hause, ist die
-Pause damit abgedeckt; abgezogen wird nur, was noch fehlt. Wer es anders
-braucht, stellt auf „Immer zusätzlich" um.
-
-**Tagesarten**
-Arbeit, Urlaub, halber Urlaub, Krank, Feiertag, Gleittag, Frei. Gesetzliche
-Feiertage kommen je nach Bundesland automatisch.
-
-**Zeitkonto**
-Laufender Überstundensaldo über alle erfassten Tage, Wochen- und Monatssummen,
-Urlaubskonto mit Restanspruch. Tage ohne Eintrag bleiben außen vor, statt das
-Konto grundlos ins Minus zu ziehen.
-
-**Arbeitszeitgesetz im Blick**
-Warnung bei 10 Stunden, gesetzliche Mindestpausen (30 Min. ab 6 h, 45 Min. ab 9 h)
-greifen zusätzlich an langen Tagen, Hinweis bei zu kurzer Ruhezeit zwischen
-zwei Tagen. Dazu betriebliche Regeln wie ein frühester Arbeitsbeginn.
-
-**Auswertung**
-Wochen- und Monatsansicht, Aufteilung nach Arbeitsort, CSV-Export für Excel
-oder Numbers, JSON-Sicherung zum Mitnehmen auf ein anderes Gerät.
-
-## Benutzung
-
-Aufrufen: **https://marki85.github.io/Arbeitszeit/**
-
-Auf dem Handy zum Home-Bildschirm hinzufügen – dann startet sie wie eine App
-und läuft auch ohne Netz:
+Auf dem Handy zum Home-Bildschirm hinzufügen, dann startet es wie eine App:
 
 - **iPhone:** Teilen-Symbol → „Zum Home-Bildschirm"
 - **Android:** Menü → „App installieren"
 
-Tastatur am Rechner: `←` `→` blättern durch Tage, Wochen oder Monate,
-`T` springt zu heute, `1`–`4` wechseln die Ansicht.
-
-## Daten
-
-Alles liegt im `localStorage` des Browsers – kein Server, kein Konto, kein
-Tracking, keine Übertragung. Das heißt aber auch: Browserdaten löschen löscht
-die Erfassung mit. Über *Mehr → Sicherung speichern* gibt es eine JSON-Datei
-zum Aufheben.
-
-## Technik
-
-Reines HTML, CSS und JavaScript (ES-Module) – kein Framework, kein Build.
-Dateien bearbeiten, hochladen, fertig.
+## Wie gerechnet wird
 
 ```
-index.html              Grundgerüst
-css/app.css             Gestaltung, hell und dunkel, Handy und Rechner
-js/time.js              Datums- und Zeitrechnung
-js/feiertage.js         Feiertage je Bundesland (Osterformel)
-js/rules.js             Tagessoll, Pausen, Arbeitszeitgesetz, Tagesauswertung
-js/store.js             Speicherung, Export, Import
-js/sprueche.js          Sprüche je nach Tagesphase
-js/ui.js                DOM-Helfer
-js/views/               Tag, Woche, Monat, Einstellungen
+Pause       = max(Frühstück + Mittag, eingetragene Unterbrechung)
+Feierabend  = Beginn + Soll + Pause
+Noch        = Feierabend − jetzt
+Fortschritt = (jetzt − Beginn) / (Feierabend − Beginn)
+```
+
+Voreingestellt sind **7 Std. Soll**, **15 Min. Frühstück** und **30 Min. Mittag** –
+Beginn 08:00 ergibt damit Feierabend **15:45**. Die Pausen gelten als genommen und
+werden automatisch abgezogen; nichts anzuhaken.
+
+**Unterbrechungen** (etwa die Fahrt von der Firma ins Homeoffice) lassen sich
+optional eintragen. Eine Unterbrechung von 45 Minuten deckt die Pause bereits ab –
+deshalb das Maximum statt der Summe. Erst eine längere verschiebt den Feierabend.
+
+**Zeiten vor 06:00** werden nicht anerkannt und ab 06:00 gerechnet, mit Hinweis.
+Diese Grenze lässt sich in den Einstellungen ändern oder leeren.
+
+## Dateien
+
+```
+index.html              alles: Aufbau, Gestaltung, Logik
+manifest.webmanifest    für „Zum Home-Bildschirm"
 sw.js                   Service Worker für den Offline-Betrieb
+icons/                  App-Symbole
 ```
 
-Zum Ausprobieren braucht es einen kleinen Webserver – als lokale Datei
-(`file://`) laden Browser keine ES-Module:
+Reines HTML, CSS und JavaScript in einer Datei. Kein Framework, kein Build,
+keine Abhängigkeiten – bearbeiten, hochladen, fertig. Öffnet sich auch direkt
+per Doppelklick als lokale Datei.
 
-```bash
-python3 -m http.server 8777
-```
+## Vorgeschichte
+
+- [`Zeiterfassung.1.1`](https://github.com/marki85/Zeiterfassung.1.1) – die erste Fassung
+- Etikett [`v2-vollversion`](https://github.com/marki85/Arbeitszeit/tree/v2-vollversion) –
+  ein Zwischenstand mit Stempeluhr, Historie, Zeitkonto, Urlaubsverwaltung und
+  CSV-Export. Zu viel für den Zweck; bewusst zurückgebaut, bleibt aber abrufbar.
 
 ## Rechtliches
 
 Privates, nicht-kommerzielles Hobbyprojekt.
 Verantwortlich für den Inhalt: **Markus Schulz**
 
-**Alle Angaben ohne Gewähr.** Verbindlich ist immer die offizielle
-Zeiterfassung des Arbeitgebers. Die Hinweise zum Arbeitszeitgesetz sind stark
-vereinfacht und ersetzen keine Rechtsberatung – Tarifverträge und
-Betriebsvereinbarungen können abweichen.
+**Alle Angaben ohne Gewähr.** Verbindlich ist immer die offizielle Zeiterfassung
+des Arbeitgebers.

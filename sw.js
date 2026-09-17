@@ -1,28 +1,19 @@
-/* Service Worker: die App vollstaendig offline verfuegbar halten.
-   Strategie: beim Installieren alles in den Cache, danach zuerst aus dem Cache
-   ausliefern und im Hintergrund auffrischen. */
+/* Service Worker: die Seite offline verfuegbar halten.
+   Zuerst aus dem Zwischenspeicher ausliefern, im Hintergrund auffrischen. */
 
-const CACHE = "arbeitszeit-v2";
+/* Der Name muss sich bei jedem Umbau aendern - beim Wechsel wirft
+   "activate" alle aelteren Zwischenspeicher weg. Sonst wuerden geloeschte
+   Dateien noch wochenlang vom Handy ausgeliefert. */
+const CACHE = "arbeitszeit-v3";
+
 const ASSETS = [
   "./",
   "index.html",
   "manifest.webmanifest",
-  "css/app.css",
-  "js/app.js",
-  "js/ui.js",
-  "js/store.js",
-  "js/rules.js",
-  "js/time.js",
-  "js/feiertage.js",
-  "js/sprueche.js",
-  "js/views/day.js",
-  "js/views/week.js",
-  "js/views/month.js",
-  "js/views/list.js",
-  "js/views/settings.js",
   "icons/icon.svg",
   "icons/icon-192.png",
   "icons/icon-512.png",
+  "icons/icon-maskable-512.png",
   "icons/apple-touch-icon.png"
 ];
 
