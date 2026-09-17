@@ -41,15 +41,19 @@ Zeilen jenseits der 10-Stunden-Grenze des Arbeitszeitgesetzes sind gekennzeichne
 
 ## Speiseplan
 
-In den Einstellungen lässt sich ein **Link zum Speiseplan** hinterlegen, etwa auf
-eine Datei im Firmen-Intranet. Ist einer gesetzt, erscheint eine Karte mit einem
-Aufhänger, der sich nach der Tageszeit richtet.
+Unter dem Spruch liegt eine Karte, die zum **Speiseplan der Kantine** führt. Ihr
+Aufhänger richtet sich nach der Tageszeit: vormittags „schon mal spicken", gegen
+Mittag „Mahlzeit!", nachmittags „für morgen vormerken".
 
-Der Link wird **nur lokal im Browser gespeichert** und liegt nicht in diesem Repo –
-interne Adressen gehören nicht in ein öffentliches Verzeichnis. Kopiert man eine im
-Browser angezeigte PDF-Datei, stellen Erweiterungen wie der Acrobat-Betrachter ihre
-eigene Adresse voran (`chrome-extension://…/https://…`); dieser Teil wird beim
-Einfügen automatisch abgeschnitten. Erlaubt sind nur `http` und `https`.
+Voreingestellt ist der Plan der Kantine Bielefeld im Intranet. Die Datei liegt
+hinter einer Anmeldung – die Adresse allein gibt niemandem Zugriff und enthält
+keine personenbezogenen Daten. In den Einstellungen lässt sich eine andere
+hinterlegen; wer keine braucht, leert das Feld, dann verschwindet die Karte.
+
+Kopiert man eine im Browser angezeigte PDF-Datei, stellen Erweiterungen wie der
+Acrobat-Betrachter ihre eigene Adresse voran (`chrome-extension://…/https://…`);
+dieser Teil wird beim Einfügen automatisch abgeschnitten. Erlaubt sind nur `http`
+und `https`.
 
 ## Dateien
 

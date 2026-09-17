@@ -764,9 +764,17 @@ function celebrate(){
    ===================================================================== */
 
 var KEY = "arbeitszeit.v2";
+
+/* Speiseplan der Kantine im Intranet. Die Datei ist nur nach Anmeldung
+   erreichbar; die Adresse allein gibt niemandem Zugriff und enthaelt keine
+   personenbezogenen Daten. In den Einstellungen aenderbar - wer sie nicht
+   braucht, leert das Feld. */
+var SPEISEPLAN = "https://dmgmori.sharepoint.com/sites/AG/Catering_bielefeld/"
+               + "Freigegebene%20Dokumente/speiseplan.pdf";
+
 var STANDARD = {
   start: "08:00", uFrom: "", uTo: "",
-  soll: 7, bf: 15, lu: 30, early: "06:00", speiseplan: "",
+  soll: 7, bf: 15, lu: 30, early: "06:00", speiseplan: SPEISEPLAN,
   theme: "auto", sprueche: true, konfetti: true
 };
 var cfg = {};
@@ -778,6 +786,10 @@ function load(){
 
   if (raw){
     for (var k in STANDARD) if (raw[k] != null) cfg[k] = raw[k];
+    // Der Speiseplan kam erst spaeter dazu. Wer die App vorher schon offen
+    // hatte, hat ein leeres Feld gespeichert - das einmalig nachtragen.
+    // Danach bleibt ein absichtlich geleertes Feld auch leer.
+    if (!raw.spV && !cfg.speiseplan) cfg.speiseplan = SPEISEPLAN;
     // Ein neuer Tag faengt leer an - sonst steht morgens noch die Startzeit
     // von vorgestern da. Die Einstellungen bleiben selbstverstaendlich.
     if (raw.date !== todayKey()){
@@ -821,7 +833,7 @@ function uebernehmen(){
 
 function save(){
   try {
-    var out = { date: todayKey() };
+    var out = { date: todayKey(), spV: 1 };
     for (var k in STANDARD) out[k] = cfg[k];
     localStorage.setItem(KEY, JSON.stringify(out));
   } catch(e){ /* privater Modus - dann gilt es nur fuer diese Sitzung */ }
