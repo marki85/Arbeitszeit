@@ -87,6 +87,11 @@ input[type=time]{
   color:var(--ink);background:var(--card);border:1.5px solid var(--line);
   border-radius:10px;padding:9px 11px;font-variant-numeric:tabular-nums;
 }
+input[type=text]{
+  width:100%;font-family:var(--sans);font-size:14px;color:var(--ink);
+  background:var(--card);border:1.5px solid var(--line);border-radius:10px;
+  padding:10px 11px;
+}
 input[type=number]{
   width:100%;font-family:var(--mono);font-size:18px;font-weight:600;
   color:var(--ink);background:var(--card);border:1.5px solid var(--line);
@@ -212,6 +217,19 @@ input:focus-visible,select:focus-visible,summary:focus-visible,.btn:focus-visibl
 .cell .v{font-family:var(--mono);font-size:20px;font-weight:600;margin-top:2px;
          font-variant-numeric:tabular-nums}
 .cell .v.pos{color:var(--petrol-ink)}
+
+/* ---------- Speiseplan ---------- */
+.speiseplan{
+  display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit;
+  padding:13px 15px;cursor:pointer;
+}
+.speiseplan:active{transform:translateY(1px)}
+.sp-ico{font-size:23px;line-height:1;flex:none}
+.sp-txt{flex:1;min-width:0}
+.sp-txt b{display:block;font-size:14.5px;font-weight:640;line-height:1.35}
+.sp-txt small{display:block;font-size:12px;color:var(--ink-2);margin-top:2px}
+.sp-pfeil{flex:none;font-size:20px;color:var(--ink-2);line-height:1}
+@media (hover:hover){ .speiseplan:hover{border-color:var(--petrol)} }
 
 /* ---------- Liste: wann ist welche Ueberstunde voll ---------- */
 .sec-title{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
@@ -408,6 +426,16 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
     <div class="spruch-hint">antippen für einen neuen Spruch</div>
   </div>
 
+  <a class="card speiseplan" id="speiseplanCard" target="_blank"
+     rel="noopener noreferrer" hidden>
+    <span class="sp-ico">🍽️</span>
+    <span class="sp-txt">
+      <b id="speiseplanTxt"></b>
+      <small>Speiseplan öffnen</small>
+    </span>
+    <span class="sp-pfeil">›</span>
+  </a>
+
   <div class="card" id="otCard">
     <div class="sec-title">Überstunden voll um</div>
     <div id="otList"></div>
@@ -440,6 +468,12 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
       <div class="field">
         <label for="early">Frühester Beginn</label>
         <input type="time" id="early" value="06:00" style="font-size:18px">
+      </div>
+      <div class="field">
+        <label for="speiseplan">Link zum Speiseplan (optional)</label>
+        <input type="text" id="speiseplan" placeholder="https://…" inputmode="url"
+               autocomplete="off" spellcheck="false">
+        <p class="note" id="speiseplanNote" style="margin-top:7px"></p>
       </div>
       <p class="note" style="margin-top:0" id="setNote"></p>
 
@@ -562,6 +596,19 @@ function todayKey(){
 }
 function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
 
+/** Prueft eine eingegebene Adresse und gibt sie sauber zurueck, sonst "".
+    Browser-Erweiterungen stellen ihre eigene Adresse voran, wenn man eine
+    angezeigte PDF-Datei kopiert (etwa der Acrobat-Betrachter in Chrome).
+    Dieser Teil wird abgeschnitten - sonst funktioniert der Link nur in genau
+    dem Browser mit genau der Erweiterung. Erlaubt sind nur http und https. */
+function saubereUrl(u){
+  u = String(u == null ? "" : u).trim();
+  if (!u) return "";
+  var m = /^[a-z-]+-extension:\/\/[^\/]+\/(https?:\/\/.+)$/i.exec(u);
+  if (m) u = m[1];
+  return /^https?:\/\//i.test(u) ? u : "";
+}
+
 /* =====================================================================
    2. Sprueche
    ===================================================================== */
@@ -662,6 +709,31 @@ var SPRUECHE = {
     ]
   };
 
+/* Je nach Tageszeit ein anderer Aufhaenger fuer den Speiseplan. */
+var ESSEN = {
+  frueh: [
+    "Schon mal spicken, was es heute gibt?",
+    "Der Vormittag geht leichter mit einem Plan f\u00fcrs Mittagessen.",
+    "Erst das Soll, dann das Wohl. Aber gucken darf man.",
+    "Was gibt's heute? Ein Blick schadet nie."
+  ],
+  mittag: [
+    "Mahlzeit! Was steht heute auf dem Plan?",
+    "Gleich Mittag \u2013 die wichtigste Entscheidung des Tages.",
+    "Der Magen meldet sich. Schau nach, was es gibt.",
+    "Zeit f\u00fcr die Kantine. Was gibt's?"
+  ],
+  spaet: [
+    "Nachschlag? Der Plan wei\u00df mehr.",
+    "Sp\u00e4te Pause? Schau, was noch da ist."
+  ],
+  morgen: [
+    "Schon mal f\u00fcr morgen schauen?",
+    "F\u00fcrs n\u00e4chste Mal vormerken.",
+    "Der Plan f\u00fcr morgen steht bestimmt schon."
+  ]
+};
+
 var spruchNudge = 0, lastSpruch = null;
 function setSpruch(phase){
   var pool = SPRUECHE[phase] || SPRUECHE.empty;
@@ -694,7 +766,7 @@ function celebrate(){
 var KEY = "arbeitszeit.v2";
 var STANDARD = {
   start: "08:00", uFrom: "", uTo: "",
-  soll: 7, bf: 15, lu: 30, early: "06:00",
+  soll: 7, bf: 15, lu: 30, early: "06:00", speiseplan: "",
   theme: "auto", sprueche: true, konfetti: true
 };
 var cfg = {};
@@ -853,6 +925,7 @@ function zeichne(){
     $("vBreak").textContent = "—";
     $("vOver").textContent = "—";
     $("notices").innerHTML = "";
+    zeichneSpeiseplan();
     if (cfg.sprueche) setSpruch("empty");
     return;
   }
@@ -895,6 +968,7 @@ function zeichne(){
 
   $("otCard").hidden = false;
   zeichneUeberstunden(r);
+  zeichneSpeiseplan();
 
   /* --- Statuszeile --- */
   var pill = $("pill");
@@ -971,6 +1045,24 @@ function zeichneUeberstunden(r){
     : "Ma\u00dfgeblich bleibt die Zeiterfassung des Betriebs.";
 }
 
+/** Speiseplan-Karte: nur sichtbar, wenn ein Link hinterlegt ist. */
+function zeichneSpeiseplan(){
+  var karte = $("speiseplanCard");
+  var url = saubereUrl(cfg.speiseplan);
+  if (!url){ karte.hidden = true; return; }
+
+  karte.hidden = false;
+  karte.href = url;
+
+  var std = new Date().getHours() + new Date().getMinutes() / 60;
+  var pool = std < 10.5 ? ESSEN.frueh
+           : std < 13.5 ? ESSEN.mittag
+           : std < 15   ? ESSEN.spaet
+           : ESSEN.morgen;
+  $("speiseplanTxt").textContent =
+    pool[(Math.floor(Date.now() / 20000) + spruchNudge) % pool.length];
+}
+
 /* =====================================================================
    6. Bedienung
    ===================================================================== */
@@ -979,6 +1071,13 @@ function zeichneUeberstunden(r){
 function notizen(){
   var soll = clamp(+cfg.soll || 0, 0, 10);
   var pause = clamp(+cfg.bf || 0, 0, 120) + clamp(+cfg.lu || 0, 0, 120);
+  var url = saubereUrl(cfg.speiseplan);
+  $("speiseplanNote").textContent = !cfg.speiseplan
+    ? "Leer lassen, wenn du keinen brauchst. Der Link bleibt nur auf diesem Gerät."
+    : url
+      ? "Link erkannt. Er erscheint als Karte über der Überstundenliste."
+      : "Das sieht nicht nach einer Web-Adresse aus – sie muss mit http:// oder "
+        + "https:// beginnen.";
   $("sollNote").textContent = "Entspricht " + fmtNum(soll * 5) + " Stunden pro Woche "
     + "bei 5 Arbeitstagen. Zwischenwerte wie 7,5 gehen auch.";
   $("setNote").textContent = "Zusammen " + pause
@@ -1006,6 +1105,7 @@ function felderFuellen(){
   $("bf").value = cfg.bf;
   $("lu").value = cfg.lu;
   $("early").value = cfg.early;
+  $("speiseplan").value = cfg.speiseplan;
   $("optSprueche").checked = !!cfg.sprueche;
   $("optKonfetti").checked = !!cfg.konfetti;
   $("spruchCard").hidden = !cfg.sprueche;
@@ -1021,6 +1121,7 @@ function uebernehmenUndZeichnen(){
   cfg.bf    = $("bf").value === "" ? 0 : +$("bf").value;
   cfg.lu    = $("lu").value === "" ? 0 : +$("lu").value;
   cfg.early = $("early").value;
+  cfg.speiseplan = $("speiseplan").value;
   cfg.sprueche = $("optSprueche").checked;
   cfg.konfetti = $("optKonfetti").checked;
   $("spruchCard").hidden = !cfg.sprueche;
@@ -1029,9 +1130,16 @@ function uebernehmenUndZeichnen(){
   zeichne();
 }
 
-["start","uFrom","uTo","soll","bf","lu","early"].forEach(function(id){
+["start","uFrom","uTo","soll","bf","lu","early","speiseplan"].forEach(function(id){
   $(id).addEventListener("input", uebernehmenUndZeichnen);
   $(id).addEventListener("change", uebernehmenUndZeichnen);
+});
+$("speiseplan").addEventListener("blur", function(){
+  var sauber = saubereUrl($("speiseplan").value);
+  if (sauber && sauber !== $("speiseplan").value.trim()){
+    $("speiseplan").value = sauber;       // Erweiterungs-Vorspann entfernt
+    uebernehmenUndZeichnen();
+  }
 });
 $("optSprueche").addEventListener("change", uebernehmenUndZeichnen);
 $("optKonfetti").addEventListener("change", uebernehmenUndZeichnen);
@@ -1067,6 +1175,7 @@ $("reset").addEventListener("click", function(){
   if (!confirm("Einstellungen auf Standard zurücksetzen?")) return;
   cfg.soll = STANDARD.soll; cfg.bf = STANDARD.bf; cfg.lu = STANDARD.lu;
   cfg.early = STANDARD.early; cfg.theme = STANDARD.theme;
+  cfg.speiseplan = STANDARD.speiseplan;
   cfg.sprueche = STANDARD.sprueche; cfg.konfetti = STANDARD.konfetti;
   felderFuellen(); save(); zeichne();
 });

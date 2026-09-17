@@ -35,6 +35,22 @@ deshalb das Maximum statt der Summe. Erst eine längere verschiebt den Feieraben
 **Zeiten vor 06:00** werden nicht anerkannt und ab 06:00 gerechnet, mit Hinweis.
 Diese Grenze lässt sich in den Einstellungen ändern oder leeren.
 
+Die Liste **„Überstunden voll um"** zeigt, bis wann zu arbeiten ist, um eine, zwei,
+drei oder vier Überstunden voll zu haben – nützlich, wenn welche bewilligt sind.
+Zeilen jenseits der 10-Stunden-Grenze des Arbeitszeitgesetzes sind gekennzeichnet.
+
+## Speiseplan
+
+In den Einstellungen lässt sich ein **Link zum Speiseplan** hinterlegen, etwa auf
+eine Datei im Firmen-Intranet. Ist einer gesetzt, erscheint eine Karte mit einem
+Aufhänger, der sich nach der Tageszeit richtet.
+
+Der Link wird **nur lokal im Browser gespeichert** und liegt nicht in diesem Repo –
+interne Adressen gehören nicht in ein öffentliches Verzeichnis. Kopiert man eine im
+Browser angezeigte PDF-Datei, stellen Erweiterungen wie der Acrobat-Betrachter ihre
+eigene Adresse voran (`chrome-extension://…/https://…`); dieser Teil wird beim
+Einfügen automatisch abgeschnitten. Erlaubt sind nur `http` und `https`.
+
 ## Dateien
 
 ```
