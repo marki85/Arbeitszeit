@@ -4,7 +4,7 @@
 /* Der Name muss sich bei jedem Umbau aendern - beim Wechsel wirft
    "activate" alle aelteren Zwischenspeicher weg. Sonst wuerden geloeschte
    Dateien noch wochenlang vom Handy ausgeliefert. */
-const CACHE = "arbeitszeit-v4";
+const CACHE = "arbeitszeit-v5";
 
 const ASSETS = [
   "./",
@@ -20,7 +20,10 @@ const ASSETS = [
 self.addEventListener("install", e => {
   e.waitUntil(
     caches.open(CACHE)
-      .then(c => c.addAll(ASSETS))
+      // "reload" erzwingt echte Netzabrufe. Ohne das bedient sich addAll am
+      // gewoehnlichen Browser-Zwischenspeicher und legt womoeglich genau die
+      // alte Fassung ab, die gerade ersetzt werden soll.
+      .then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: "reload" }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -39,7 +42,9 @@ self.addEventListener("fetch", e => {
 
   e.respondWith(
     caches.match(req).then(hit => {
-      const fresh = fetch(req).then(res => {
+      // "no-cache" laesst den Server pruefen, ob es etwas Neues gibt,
+      // statt blind den Browser-Zwischenspeicher zu nehmen.
+      const fresh = fetch(req, { cache: "no-cache" }).then(res => {
         if (res && res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then(c => c.put(req, copy));
