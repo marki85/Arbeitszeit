@@ -272,18 +272,43 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
 /* ---------- Grosser Bildschirm: zwei Spalten, kein Scrollen ---------- */
 @media (min-width:820px){
   body{padding-left:24px;padding-right:24px}
-  .wrap{max-width:920px;padding-top:26px}
-  h1{margin-bottom:18px}
+  .wrap{max-width:920px;padding-top:18px}
+  h1{margin-bottom:14px}
 
   .main{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;align-items:start}
   .main>.col{display:flex;flex-direction:column;min-width:0}
 
-  /* Etwas kompakter, damit alles zusammen auf einen Laptop-Schirm passt. */
-  .hero{padding:20px 16px 16px}
-  .hero .big{font-size:58px;margin:8px 0 3px}
-  .bar-wrap{margin-top:17px}
-  .pill{margin-top:13px}
-  .foot{margin-top:22px}
+  /* Etwas kompakter, damit alles zusammen auf einen Laptop-Schirm passt,
+     ohne dass es gedraengt wirkt. */
+  .card{margin-bottom:10px}
+  .hero{padding:16px 16px 14px}
+  .hero .big{font-size:54px;margin:7px 0 3px}
+  .bar-wrap{margin-top:15px}
+  .pill{margin-top:12px}
+  .cell{padding:10px 12px}
+  .foot{margin-top:14px}
+  .foot .credit{margin-top:10px;padding-top:10px;font-size:14px}
+  /* Der Weg zum Home-Bildschirm betrifft nur Telefone. */
+  .nur-handy{display:none}
+}
+
+/* Flaches Fenster am Rechner: noch einmal enger schnueren, damit auch bei
+   700 px Hoehe nichts gescrollt werden muss. */
+@media (min-width:820px) and (max-height:770px){
+  .wrap{padding-top:12px}
+  h1{font-size:20px;margin-bottom:10px}
+  .card{margin-bottom:8px}
+  .hero{padding:13px 16px 12px}
+  .hero .big{font-size:46px;margin:5px 0 2px}
+  .bar-wrap{margin-top:12px}
+  .pill{margin-top:10px;padding:6px 13px;font-size:13.5px}
+  .cell{padding:8px 12px}
+  .cell .v{font-size:18px}
+  .ot-row{padding:7px 0}
+  #otNote{display:none}
+  details.acc>summary{padding:11px 16px}
+  .foot{margin-top:10px;font-size:12px}
+  .foot .credit{margin-top:8px;padding-top:8px;font-size:13px}
 }
 
 @media (hover:hover){
@@ -365,15 +390,6 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
     <div class="pill" id="pill"><span class="dot"></span><span id="pillTxt">—</span></div>
   </div>
 
-  </div><!-- /col -->
-  <div class="col">
-
-  <div class="card spruch" id="spruchCard" role="button" tabindex="0"
-       title="Antippen für einen neuen Spruch">
-    <div class="spruch-txt" id="spruch"></div>
-    <div class="spruch-hint">antippen für einen neuen Spruch</div>
-  </div>
-
   <div id="notices"></div>
 
   <div class="grid">
@@ -381,6 +397,15 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
     <div class="cell"><div class="k">Gearbeitet</div><div class="v" id="vNet">—</div></div>
     <div class="cell"><div class="k">Pause</div><div class="v" id="vBreak">—</div></div>
     <div class="cell"><div class="k">Überstunden</div><div class="v" id="vOver">—</div></div>
+  </div>
+
+  </div><!-- /col -->
+  <div class="col">
+
+  <div class="card spruch" id="spruchCard" role="button" tabindex="0"
+       title="Antippen für einen neuen Spruch">
+    <div class="spruch-txt" id="spruch"></div>
+    <div class="spruch-hint">antippen für einen neuen Spruch</div>
   </div>
 
   <div class="card" id="otCard">
@@ -468,7 +493,7 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
   </div><!-- /main -->
 
   <div class="foot">
-    iPhone: Teilen-Symbol → „Zum Home-Bildschirm“.
+    <span class="nur-handy">iPhone: Teilen-Symbol → „Zum Home-Bildschirm“.</span>
     <div class="credit">
       Mit freundlicher Unterstützung von <strong>Markus Schulz</strong>.<br>
       Alle Angaben ohne Gewähr.
@@ -942,10 +967,8 @@ function zeichneUeberstunden(r){
   }
   $("otList").innerHTML = html;
   $("otNote").textContent = r.ueber >= 60
-    ? "Angerechnet werden " + fmtShort(r.ueber) + " Std. \u2013 die offizielle "
-      + "Zeiterfassung des Betriebs z\u00e4hlt."
-    : "Ab wann sich eine ganze \u00dcberstunde angesammelt hat. Ma\u00dfgeblich ist "
-      + "die offizielle Zeiterfassung des Betriebs.";
+    ? "Aufgelaufen: " + fmtShort(r.ueber) + " Std. Ma\u00dfgeblich bleibt der Betrieb."
+    : "Ma\u00dfgeblich bleibt die Zeiterfassung des Betriebs.";
 }
 
 /* =====================================================================

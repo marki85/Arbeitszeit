@@ -4,7 +4,7 @@
 /* Der Name muss sich bei jedem Umbau aendern - beim Wechsel wirft
    "activate" alle aelteren Zwischenspeicher weg. Sonst wuerden geloeschte
    Dateien noch wochenlang vom Handy ausgeliefert. */
-const CACHE = "arbeitszeit-v5";
+const CACHE = "arbeitszeit-v6";
 
 const ASSETS = [
   "./",
