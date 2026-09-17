@@ -213,6 +213,20 @@ input:focus-visible,select:focus-visible,summary:focus-visible,.btn:focus-visibl
          font-variant-numeric:tabular-nums}
 .cell .v.pos{color:var(--petrol-ink)}
 
+/* ---------- Liste: wann ist welche Ueberstunde voll ---------- */
+.sec-title{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+           color:var(--ink-2);margin-bottom:6px}
+.ot-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+        padding:9px 0;border-top:1px solid var(--line-2)}
+.ot-row:first-child{border-top:none}
+.ot-row .n{font-size:14px;font-weight:600}
+.ot-row .t{font-family:var(--mono);font-size:16.5px;font-weight:600;
+           font-variant-numeric:tabular-nums;white-space:nowrap}
+.ot-row.hit .n,.ot-row.hit .t{color:var(--petrol-ink)}
+.ot-row.zuviel .n,.ot-row.zuviel .t{color:var(--ink-2)}
+.ot-row .grenze{display:block;font-size:11px;font-weight:600;color:var(--amber);
+                margin-top:1px}
+
 /* ---------- Ausklappbares ---------- */
 details.acc{border:1px solid var(--line);border-radius:12px;background:var(--card);
             margin-bottom:12px}
@@ -367,6 +381,12 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
     <div class="cell"><div class="k">Gearbeitet</div><div class="v" id="vNet">—</div></div>
     <div class="cell"><div class="k">Pause</div><div class="v" id="vBreak">—</div></div>
     <div class="cell"><div class="k">Überstunden</div><div class="v" id="vOver">—</div></div>
+  </div>
+
+  <div class="card" id="otCard">
+    <div class="sec-title">Überstunden voll um</div>
+    <div id="otList"></div>
+    <p class="note" id="otNote" style="margin-top:10px"></p>
   </div>
 
   <!-- ---------- Einstellungen ---------- -->
@@ -800,6 +820,7 @@ function zeichne(){
     $("barStart").textContent = "—";
     $("barEnd").textContent = "—";
     $("otWrap").hidden = true;
+    $("otCard").hidden = true;
     $("pill").className = "pill idle";
     $("pillTxt").textContent = "Noch keine Startzeit";
     $("vPresent").textContent = "—";
@@ -846,6 +867,9 @@ function zeichne(){
   } else {
     $("otWrap").hidden = true;
   }
+
+  $("otCard").hidden = false;
+  zeichneUeberstunden(r);
 
   /* --- Statuszeile --- */
   var pill = $("pill");
@@ -896,6 +920,32 @@ function zeichne(){
   if (warFertig === null) warFertig = r.fertig;
   else if (r.fertig && !warFertig && cfg.konfetti) celebrate();
   warFertig = r.fertig;
+}
+
+/** Wann ist die erste, zweite, dritte, vierte Ueberstunde voll?
+    Nuetzlich, wenn im Betrieb Ueberstunden bewilligt sind und man sie
+    gezielt abarbeiten will. Zeilen jenseits der 10-Stunden-Grenze des
+    Arbeitszeitgesetzes werden ausgegraut und benannt. */
+function zeichneUeberstunden(r){
+  var html = "";
+  for (var k = 1; k <= 4; k++){
+    var netto  = r.soll + k * 60;              // Nettoarbeitszeit an dem Punkt
+    var zuviel = netto > 600;                  // mehr als 10 Std. - nicht zulaessig
+    var hit    = r.ueber >= k * 60;
+    html += '<div class="ot-row' + (hit ? " hit" : "") + (zuviel ? " zuviel" : "") + '">'
+          +   '<span class="n">' + k + " \u00dcberstunde" + (k > 1 ? "n" : "")
+          +     (zuviel ? '<span class="grenze">\u00fcber der 10-Stunden-Grenze</span>' : "")
+          +   "</span>"
+          +   '<span class="t">' + fmtClock(r.feierabend + k * 60)
+          +     (hit ? " \u2713" : "") + "</span>"
+          + "</div>";
+  }
+  $("otList").innerHTML = html;
+  $("otNote").textContent = r.ueber >= 60
+    ? "Angerechnet werden " + fmtShort(r.ueber) + " Std. \u2013 die offizielle "
+      + "Zeiterfassung des Betriebs z\u00e4hlt."
+    : "Ab wann sich eine ganze \u00dcberstunde angesammelt hat. Ma\u00dfgeblich ist "
+      + "die offizielle Zeiterfassung des Betriebs.";
 }
 
 /* =====================================================================
