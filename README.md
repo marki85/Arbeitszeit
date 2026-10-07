@@ -39,6 +39,8 @@ Die Liste **„Überstunden voll um"** zeigt, bis wann zu arbeiten ist, um eine,
 drei oder vier Überstunden voll zu haben – nützlich, wenn welche bewilligt sind.
 Zeilen jenseits der 10-Stunden-Grenze des Arbeitszeitgesetzes sind gekennzeichnet.
 
+Impressum und Datenschutz stehen als Link in der Fußzeile.
+
 ## Speiseplan
 
 Unter dem Spruch liegt eine Karte, die zum **Speiseplan der Kantine** führt. Ihr
@@ -62,6 +64,14 @@ Mittagspause ein Knopf, der eine fertige Einladung erzeugt: *„Mittag heute um
 12:30 in der Kantine – wer kommt mit?"* samt Link zum Speiseplan. Auf dem Handy
 öffnet sich das Teilen-Menü (WhatsApp, Teams …), am Rechner landet der Text in
 der Zwischenablage zum Einfügen in Teams.
+
+**Heute für die anderen** – Jeden Tag eine kleine Geste, für alle dieselbe:
+*„Bring jemandem einen Kaffee mit"*, *„Lob jemanden – gern vor den anderen"*,
+*„Frag neue Kollegen, wie es ihnen geht"*. Wer sie erledigt hat, tippt aufs Herz.
+Gezählt oder verglichen wird nichts, der Haken liegt nur auf dem eigenen Gerät.
+Darunter drei Knöpfe mit fertigen Sätzen zum Teilen: *„Ich hol mir gleich einen
+Kaffee – soll ich jemandem einen mitbringen?"*, *„In der Kaffeeküche steht
+Kuchen"* und die Bäcker-Runde.
 
 **Sprüche** – Neben den Durchhalte-Sprüchen gibt es solche, die auf Kollegen,
 Wertschätzung, Geben und konzentriertes Arbeiten zielen – etwa *„Heute schon
