@@ -92,12 +92,15 @@ input[type=time]{
      Hoehe und zentriertem Text. Mit appearance:none und fester Hoehe verhalten
      sie sich wie normale Felder - das Zeit-Rad beim Antippen bleibt. */
   -webkit-appearance:none;appearance:none;
-  display:block;min-width:0;height:58px;line-height:normal;text-align:left;
+  display:block;min-width:0;height:58px;text-align:left;
+  /* Zeilenhoehe = Innenhoehe (Hoehe minus 2 x 1,5 px Rand). Bei fester Hoehe
+     setzt iOS-Safari den Text sonst an den oberen Rand statt in die Mitte. */
+  line-height:55px;
 }
-input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0;line-height:inherit}
 /* Kleinere Uhrzeit-Felder (Pausen, Unterbrechung, fruehester Beginn) - gleich
    hoch wie die Zahlenfelder daneben. */
-input[type=time].klein{font-size:18px;height:46px}
+input[type=time].klein{font-size:18px;height:46px;line-height:43px}
 input[type=text]{
   height:46px;
   width:100%;font-family:var(--sans);font-size:14px;color:var(--ink);
@@ -394,7 +397,7 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
   .foot .credit{margin-top:8px;padding-top:8px;font-size:13px}
   /* Eingabekarte mit Mittagszeile kompakter */
   .main .card:first-child{padding:13px 16px}
-  #start{font-size:26px;height:50px}
+  #start{font-size:26px;height:50px;line-height:47px}
   .startrow .btn{height:50px}
   .mittagrow{margin-top:8px}
   .mittagrow .seg button{padding:5px 6px}
