@@ -253,24 +253,6 @@ input:focus-visible,select:focus-visible,summary:focus-visible,.btn:focus-visibl
   .sp-teilen:hover{border-color:var(--petrol)}
 }
 
-/* ---------- Spruch vorschlagen ---------- */
-.linkbtn{font:inherit;color:var(--petrol-ink);background:none;border:none;padding:0;
-  cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-dialog.vs{margin:auto;width:min(440px,calc(100vw - 32px));border:1px solid var(--line);
-  border-radius:16px;background:var(--card);color:var(--ink);padding:20px;
-  box-shadow:0 20px 60px rgba(0,0,0,.25)}
-dialog.vs::backdrop{background:rgba(15,18,21,.45)}
-dialog.vs h2{font-size:17px;font-weight:680;margin-bottom:6px}
-dialog.vs .field{margin-top:12px}
-dialog.vs textarea,dialog.vs select{width:100%;font-family:var(--sans);font-size:15px;
-  color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;
-  padding:10px 11px}
-dialog.vs textarea{resize:none;line-height:1.4}
-dialog.vs textarea:focus-visible,dialog.vs select:focus-visible{outline:none;
-  border-color:var(--petrol);box-shadow:0 0 0 3px var(--petrol-soft)}
-dialog.vs .zaehler{display:block;text-align:right;font-size:11.5px;color:var(--ink-2);margin-top:3px}
-dialog.vs .knoepfe{display:flex;gap:10px;margin-top:16px}
-dialog.vs .knoepfe .btn{flex:1}
 
 /* ---------- Liste: wann ist welche Ueberstunde voll ---------- */
 .sec-title{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
@@ -485,7 +467,7 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
   <div class="card spruch" id="spruchCard" role="button" tabindex="0"
        title="Antippen für einen neuen Spruch">
     <div class="spruch-txt" id="spruch"></div>
-    <div class="spruch-hint" id="spruchHint">antippen für einen neuen Spruch</div>
+    <div class="spruch-hint">antippen für einen neuen Spruch</div>
   </div>
 
   <div class="card speiseplan" id="speiseplanCard" hidden>
@@ -603,49 +585,11 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
     <span class="nur-handy">iPhone: Teilen-Symbol → „Zum Home-Bildschirm“.</span>
     <div class="credit">
       Mit freundlicher Unterstützung von <strong>Markus Schulz</strong>.<br>
-      Alle Angaben ohne Gewähr. ·
-      <button class="linkbtn" id="vsOeffnen" type="button">💬 Eigenen Spruch vorschlagen</button>
+      Alle Angaben ohne Gewähr.
     </div>
   </div>
 
 </div>
-
-<dialog class="vs" id="vorschlag" aria-labelledby="vsTitel">
-  <form method="dialog">
-    <h2 id="vsTitel">Eigenen Spruch vorschlagen</h2>
-    <p class="note" style="margin-top:0">Was motiviert dich bei der Arbeit? Dein Spruch kann
-      bald bei allen auftauchen, die diese Seite nutzen.</p>
-    <div class="field">
-      <label for="vsText">Dein Spruch</label>
-      <textarea id="vsText" rows="2" maxlength="58"
-                placeholder="Zum Beispiel: Wer fragt, hilft – auch sich selbst."></textarea>
-      <span class="zaehler" id="vsZaehler">0 / 58</span>
-    </div>
-    <div class="two">
-      <div class="field">
-        <label for="vsName">Dein Vorname (optional)</label>
-        <input type="text" id="vsName" maxlength="20" autocomplete="given-name">
-      </div>
-      <div class="field">
-        <label for="vsWann">Wann passt er?</label>
-        <select id="vsWann">
-          <option value="mid">zwischendurch</option>
-          <option value="morning">morgens</option>
-          <option value="stretch">nachmittags</option>
-          <option value="endspurt">kurz vor Feierabend</option>
-          <option value="done">zum Feierabend</option>
-          <option value="pause">in der Pause</option>
-        </select>
-      </div>
-    </div>
-    <p class="note">Mit Namen steht darunter „— von …“. Die Seite ist öffentlich,
-      jeder mit dem Link kann den Spruch sehen. Ohne Namen bleibt er anonym.</p>
-    <div class="knoepfe">
-      <button class="btn ghost" value="abbrechen">Abbrechen</button>
-      <button class="btn" id="vsSenden" type="button" data-label="An Markus schicken">An Markus schicken</button>
-    </div>
-  </form>
-</dialog>
 
 <script>
 (function(){
@@ -749,7 +693,8 @@ var SPRUECHE = {
     "Was willst du heute fertig kriegen? Fang damit an.",
     "Das Wichtigste zuerst – solange der Kopf frisch ist.",
     "Ein „Moin“ in die Runde, und der Tag startet besser. 🙂",
-    "Wer neben dir hat heute viel vor? Kurz fragen lohnt."
+    "Wer neben dir hat heute viel vor? Kurz fragen lohnt.",
+    "Für die Kollegen gleich einen Kaffee mitbringen? ☕"
   ],
   mid: [
     "Du bist voll im Flow – weiter so!",
@@ -765,7 +710,10 @@ var SPRUECHE = {
     "Hat dir heute jemand geholfen? Ein Danke passt immer.",
     "Eine Sache richtig ist mehr wert als drei halb.",
     "Benachrichtigungen aus, eine Aufgabe an. 🎧",
-    "Kurz bei den Kollegen reinschauen – wie läuft's da?"
+    "Kurz bei den Kollegen reinschauen – wie läuft's da?",
+    "Heute schon jemandem einen Kaffee ausgegeben? ☕",
+    "Ein Lob kostet nichts. Verteil heute mal eins. 👍",
+    "Kleine Geste, großer Unterschied: Bring jemandem was mit."
   ],
   stretch: [
     "Der Kaffee war's wert. Gut unterwegs!",
@@ -776,7 +724,9 @@ var SPRUECHE = {
     "Gegen das Nachmittagstief hilft ein Gespräch. 🗣️",
     "Wartet noch jemand auf eine Antwort von dir?",
     "Gute Arbeit verdient ein Danke – auch die von anderen.",
-    "Zielgerade in Sicht. Mach's ordentlich zu Ende. 👌"
+    "Zielgerade in Sicht. Mach's ordentlich zu Ende. 👌",
+    "Kekse in die Runde? Nachmittags wirken sie Wunder. 🍪",
+    "Hat jemand gerade zu viel auf dem Tisch? Frag mal nach."
   ],
   endspurt: [
     "Endspurt! 🏁 Gleich ist das Soll voll.",
@@ -795,7 +745,8 @@ var SPRUECHE = {
     "Tagwerk vollbracht. Verdient. 👏",
     "Erledigt. Der Stuhl darf jetzt abkühlen. 😄",
     "Sag den anderen kurz tschüss – das gehört dazu. 👋",
-    "Was lief heute gut? Kurz drüber freuen. 🙌"
+    "Was lief heute gut? Kurz drüber freuen. 🙌",
+    "Wem hast du heute geholfen? Das zählt mehr als Stunden."
   ],
   overtime: [
     "Überstunde läuft – das kommt aufs Konto. 💪",
@@ -820,7 +771,8 @@ var SPRUECHE = {
     "Mahlzeit! 🍽️",
     "Pause ist der Teil des Tages, den man nicht wegoptimiert.",
     "Zusammen essen schmeckt besser. Wer ist dabei? 🍽️",
-    "Pause mit Kollegen statt mit dem Handy? Probier's. 🙂"
+    "Pause mit Kollegen statt mit dem Handy? Probier's. 🙂",
+    "Heute zahlst du den Kaffee? Freut doppelt. ☕"
   ]
 };
 
@@ -839,21 +791,10 @@ var WOCHENTAG = {
     morning: ["Freitag! Was bringst du heute noch zu Ende? 🎯"],
     stretch: ["Freitag-Nachmittag: offene Enden für Montag notieren. 📝"],
     endspurt:["Freitag. Wünsch den anderen ein schönes Wochenende. 👋"],
-    done:    ["Wochenende! Danke an alle, die mitgezogen haben. 🙌"]
+    done:    ["Wochenende! Danke an alle, die mitgezogen haben. 🙌"],
+    pause:   ["Freitag – Zeit für eine Runde Kaffee oder Kuchen? 🍰"]
   }
 };
-
-/* Sprueche von Kolleginnen und Kollegen. Vorschlaege kommen ueber
-   "Spruch vorschlagen" unten auf der Seite und werden hier eingetragen.
-   Format: { t: "Spruch", von: "Vorname", phase: "mid" }
-   phase: morning, mid, stretch, endspurt, done, pause - ohne Angabe "mid".
-   Namen nur mit Einverstaendnis: die Seite ist oeffentlich. */
-var KOLLEGEN = [
-];
-KOLLEGEN.forEach(function(k){
-  var pool = SPRUECHE[k.phase] || SPRUECHE.mid;
-  pool.push({ t: k.t, von: k.von });
-});
 
 /* Je nach Tageszeit ein anderer Aufhaenger fuer den Speiseplan. */
 var ESSEN = {
@@ -884,15 +825,10 @@ var spruchNudge = 0, lastSpruch = null;
 function setSpruch(phase){
   var extra = (WOCHENTAG[new Date().getDay()] || {})[phase] || [];
   var pool = (SPRUECHE[phase] || SPRUECHE.empty).concat(extra);
-  var e = pool[(Math.floor(Date.now() / 20000) + spruchNudge) % pool.length];
-  var txt = typeof e === "string" ? e : e.t;
-  var von = typeof e === "string" ? "" : (e.von || "");
-  if (txt + von === lastSpruch) return;
+  var txt = pool[(Math.floor(Date.now() / 20000) + spruchNudge) % pool.length];
+  if (txt === lastSpruch) return;
   $("spruch").textContent = txt;
-  // Bei Kollegen-Spruechen steht dort der Name statt des Bedienhinweises -
-  // beides zusammen passt auf dem Handy nicht in eine Zeile.
-  $("spruchHint").textContent = von ? "\u2014 von " + von : "antippen f\u00fcr einen neuen Spruch";
-  lastSpruch = txt + von;
+  lastSpruch = txt;
 }
 
 var reduceMotion = window.matchMedia
@@ -1490,29 +1426,6 @@ $("mitkommen").addEventListener("click", function(){
     : "\uD83C\uDF7D\uFE0F Mittag heute um " + fmtClock(luV) + " in der Kantine \u2013 wer kommt mit?";
   if (url) text += "\nSpeiseplan: " + url;
   teilen(text, this, "\u2713 Kopiert \u2013 in Teams einf\u00fcgen");
-});
-
-/* Spruch vorschlagen: der Vorschlag geht als Text an Markus, der ihn in die
-   Sammlung uebernimmt. Kein Server, keine gespeicherten Daten. */
-var vs = $("vorschlag");
-$("vsOeffnen").addEventListener("click", function(){
-  if (typeof vs.showModal === "function") vs.showModal(); else vs.setAttribute("open", "");
-  $("vsText").focus();
-});
-vs.addEventListener("click", function(e){ if (e.target === vs) vs.close(); });   // Klick daneben
-$("vsText").addEventListener("input", function(){
-  $("vsZaehler").textContent = this.value.length + " / 58";
-});
-$("vsSenden").addEventListener("click", function(){
-  var t = $("vsText").value.trim();
-  if (!t){ $("vsText").focus(); return; }
-  var name = $("vsName").value.trim();
-  var wann = $("vsWann");
-  var text = "\uD83D\uDCAC Spruch-Vorschlag f\u00fcr die Arbeitszeit-App\n"
-    + "\u201E" + t + "\u201C\n"
-    + "von: " + (name || "ohne Namen") + "\n"
-    + "wann: " + wann.options[wann.selectedIndex].text;
-  teilen(text, this, "\u2713 Kopiert \u2013 jetzt Markus schicken");
 });
 
 $("now").addEventListener("click", function(){
