@@ -80,19 +80,32 @@ h1{font-size:22px;font-weight:680;letter-spacing:-.01em;margin-bottom:16px}
 
 /* ---------- Eingabe ---------- */
 .startrow{display:flex;gap:10px;align-items:flex-end}
+.startrow .btn{flex:none;height:58px}
 .field{flex:1;min-width:0}
 label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
 input[type=time]{
   width:100%;font-family:var(--mono);font-size:30px;font-weight:600;
   color:var(--ink);background:var(--card);border:1.5px solid var(--line);
-  border-radius:10px;padding:9px 11px;font-variant-numeric:tabular-nums;
+  border-radius:10px;padding:0 11px;font-variant-numeric:tabular-nums;
+  /* iOS-Safari zeichnet Uhrzeit-Felder sonst selbst: mit eigener Mindestbreite
+     (das Feld ragt dann aus der Karte oder unter den Nachbarknopf), eigener
+     Hoehe und zentriertem Text. Mit appearance:none und fester Hoehe verhalten
+     sie sich wie normale Felder - das Zeit-Rad beim Antippen bleibt. */
+  -webkit-appearance:none;appearance:none;
+  display:block;min-width:0;height:58px;line-height:normal;text-align:left;
 }
+input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
+/* Kleinere Uhrzeit-Felder (Pausen, Unterbrechung, fruehester Beginn) - gleich
+   hoch wie die Zahlenfelder daneben. */
+input[type=time].klein{font-size:18px;height:46px}
 input[type=text]{
+  height:46px;
   width:100%;font-family:var(--sans);font-size:14px;color:var(--ink);
   background:var(--card);border:1.5px solid var(--line);border-radius:10px;
   padding:10px 11px;
 }
 input[type=number]{
+  height:46px;
   width:100%;font-family:var(--mono);font-size:18px;font-weight:600;
   color:var(--ink);background:var(--card);border:1.5px solid var(--line);
   border-radius:10px;padding:9px 11px;font-variant-numeric:tabular-nums;
@@ -300,6 +313,7 @@ details.acc>summary .chev{color:var(--ink-2);transition:transform .2s;font-size:
 details.acc[open]>summary .chev{transform:rotate(180deg)}
 .acc-body{padding:0 16px 16px}
 .row-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.acc-body>.field{margin-bottom:12px}
 .note{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:8px}
 
 .seg{display:flex;gap:4px;background:var(--card-2);border:1px solid var(--line);
@@ -380,7 +394,8 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
   .foot .credit{margin-top:8px;padding-top:8px;font-size:13px}
   /* Eingabekarte mit Mittagszeile kompakter */
   .main .card:first-child{padding:13px 16px}
-  #start{font-size:26px;padding:7px 10px}
+  #start{font-size:26px;height:50px}
+  .startrow .btn{height:50px}
   .mittagrow{margin-top:8px}
   .mittagrow .seg button{padding:5px 6px}
   .sub{margin-top:10px}
@@ -430,11 +445,11 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
         <div class="two">
           <div class="field">
             <label for="uFrom">von</label>
-            <input type="time" id="uFrom">
+            <input type="time" id="uFrom" class="klein">
           </div>
           <div class="field">
             <label for="uTo">bis</label>
-            <input type="time" id="uTo">
+            <input type="time" id="uTo" class="klein">
           </div>
         </div>
         <p class="note">Zum Beispiel die Fahrt von der Firma nach Hause. Fällt sie
@@ -545,17 +560,17 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
       <div class="row-fields">
         <div class="field">
           <label for="bfVon">Frühstück von</label>
-          <input type="time" id="bfVon" value="09:30" style="font-size:18px">
+          <input type="time" id="bfVon" value="09:30" class="klein">
         </div>
         <div class="field">
           <label for="bfBis">bis</label>
-          <input type="time" id="bfBis" value="09:45" style="font-size:18px">
+          <input type="time" id="bfBis" value="09:45" class="klein">
         </div>
       </div>
       <div class="row-fields">
         <div class="field">
           <label for="luVon">Mittag ab</label>
-          <input type="time" id="luVon" value="12:00" style="font-size:18px">
+          <input type="time" id="luVon" value="12:00" class="klein">
         </div>
         <div class="field">
           <label for="luDauer">Mittag (Min.)</label>
@@ -564,7 +579,7 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
       </div>
       <div class="field">
         <label for="early">Frühester Beginn</label>
-        <input type="time" id="early" value="06:00" style="font-size:18px">
+        <input type="time" id="early" value="06:00" class="klein">
       </div>
       <div class="field">
         <label for="speiseplan">Link zum Speiseplan (optional)</label>
