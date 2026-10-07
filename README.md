@@ -17,20 +17,20 @@ Auf dem Handy zum Home-Bildschirm hinzufügen, dann startet es wie eine App:
 
 ## Wie gerechnet wird
 
-```
-Pause       = max(Frühstück + Mittag, eingetragene Unterbrechung)
-Feierabend  = Beginn + Soll + Pause
-Noch        = Feierabend − jetzt
-Fortschritt = (jetzt − Beginn) / (Feierabend − Beginn)
-```
+Die Pausen sind **feste Zeitfenster** und zählen erst, wenn sie dran sind:
 
-Voreingestellt sind **7 Std. Soll**, **15 Min. Frühstück** und **30 Min. Mittag** –
-Beginn 08:00 ergibt damit Feierabend **15:45**. Die Pausen gelten als genommen und
-werden automatisch abgezogen; nichts anzuhaken.
+- **Frühstück** 09:30–09:45
+- **Mittag** 30 Minuten ab 12:00, 12:30 oder 13:00 – per Knopf unter dem
+  Arbeitsbeginn wählbar, die Wahl bleibt gespeichert
 
-**Unterbrechungen** (etwa die Fahrt von der Firma ins Homeoffice) lassen sich
-optional eintragen. Eine Unterbrechung von 45 Minuten deckt die Pause bereits ab –
-deshalb das Maximum statt der Summe. Erst eine längere verschiebt den Feierabend.
+„Gearbeitet" wächst damit vom ersten Moment an und bleibt während einer Pause
+stehen. Im Balken sind die Pausen als schraffierte Lücken zu sehen. Beginn
+08:00 ergibt bei 7 Stunden Soll weiterhin Feierabend **15:45**.
+
+Eine Pause, die vor dem Arbeitsbeginn liegt, entfällt – wer um 10:00 anfängt,
+hat keine Frühstückspause. Eine eingetragene **Unterbrechung** (etwa die Fahrt
+ins Homeoffice) wird wie eine Pause behandelt; überschneidet sie sich mit der
+Mittagspause, zählt die gemeinsame Zeit nur einmal.
 
 **Zeiten vor 06:00** werden nicht anerkannt und ab 06:00 gerechnet, mit Hinweis.
 Diese Grenze lässt sich in den Einstellungen ändern oder leeren.

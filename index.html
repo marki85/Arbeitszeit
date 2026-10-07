@@ -118,6 +118,14 @@ input:focus-visible,select:focus-visible,summary:focus-visible,.btn:focus-visibl
 .sollrow .btn[aria-pressed="true"]{border-color:var(--petrol);background:var(--petrol-soft);
   color:var(--petrol-ink)}
 
+/* Mittag-Schnellwahl unter dem Arbeitsbeginn */
+.mittagrow{display:flex;align-items:center;gap:10px;margin-top:12px}
+.mittagrow .lbl-inline{flex:none;font-size:12px;font-weight:600;color:var(--ink-2);
+  min-width:44px}
+.mittagrow .seg{flex:1;margin-bottom:0}
+.mittagrow .seg button{font-family:var(--mono);font-size:13.5px;
+  font-variant-numeric:tabular-nums}
+
 /* Unterbrechung: unauffaellige Zeile unten in der Eingabekarte */
 .sub{border-top:1px solid var(--line-2);margin-top:14px}
 .sub>summary{
@@ -156,6 +164,12 @@ input:focus-visible,select:focus-visible,summary:focus-visible,.btn:focus-visibl
                  font-variant-numeric:tabular-nums}
 .bar-legend .t{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
+/* Pausen im Balken: schraffierte Fenster. Sie liegen deckend ueber der
+   Fuellung - die sichtbare Petrol-Flaeche ist damit genau die Arbeitszeit. */
+.bar-pause{position:absolute;top:0;bottom:0;
+  background:repeating-linear-gradient(135deg,var(--card-2) 0 3px,var(--line) 3px 5px);
+  border-left:1px solid var(--card);border-right:1px solid var(--card)}
+
 /* Zweiter, schmaler Balken fuer die Ueberstunden */
 .ot-wrap{margin-top:12px}
 .ot{position:relative;height:7px;background:var(--card-2);border:1px solid var(--line);
@@ -172,6 +186,7 @@ input:focus-visible,select:focus-visible,summary:focus-visible,.btn:focus-visibl
 }
 .pill.over{background:var(--amber-soft);color:var(--amber)}
 .pill.idle{background:var(--card-2);color:var(--ink-2)}
+.pill.pause{background:var(--blue-soft);color:var(--blue)}
 .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
 .pill.live .dot{animation:pulse 1.8s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -308,6 +323,9 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
   .foot .credit{margin-top:10px;padding-top:10px;font-size:14px}
   /* Der Weg zum Home-Bildschirm betrifft nur Telefone. */
   .nur-handy{display:none}
+  /* Nach Feierabend sagen Ueberstundenbalken und grosse Zahl bereits, was die
+     Statuszeile sagen wuerde - am Rechner spart das eine Zeile Hoehe. */
+  .pill.over{display:none}
 }
 
 /* Flaches Fenster am Rechner: noch einmal enger schnueren, damit auch bei
@@ -327,6 +345,15 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
   details.acc>summary{padding:11px 16px}
   .foot{margin-top:10px;font-size:12px}
   .foot .credit{margin-top:8px;padding-top:8px;font-size:13px}
+  /* Eingabekarte mit Mittagszeile kompakter */
+  .main .card:first-child{padding:13px 16px}
+  #start{font-size:26px;padding:7px 10px}
+  .mittagrow{margin-top:8px}
+  .mittagrow .seg button{padding:5px 6px}
+  .sub{margin-top:10px}
+  .sub>summary{padding-top:9px}
+  .bar-wrap{margin-top:10px}
+  .pill{margin-top:8px}
 }
 
 @media (hover:hover){
@@ -355,6 +382,15 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
       <button class="btn" id="now" type="button">Jetzt</button>
     </div>
 
+    <div class="mittagrow">
+      <span class="lbl-inline">Mittag</span>
+      <div class="seg" id="luSeg" role="group" aria-label="Mittagspause ab">
+        <button type="button" data-lu="12:00" aria-pressed="false">12:00</button>
+        <button type="button" data-lu="12:30" aria-pressed="false">12:30</button>
+        <button type="button" data-lu="13:00" aria-pressed="false">13:00</button>
+      </div>
+    </div>
+
     <details class="sub" id="uAcc">
       <summary><span id="uSummary">Unterbrechung eintragen</span><span class="chev">▾</span></summary>
       <div class="sub-body">
@@ -368,9 +404,8 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
             <input type="time" id="uTo">
           </div>
         </div>
-        <p class="note">Zum Beispiel die Fahrt von der Firma nach Hause. Deine
-          <span id="uPause">45</span> Minuten Pause sind damit schon abgedeckt –
-          erst eine längere Unterbrechung verschiebt den Feierabend.</p>
+        <p class="note">Zum Beispiel die Fahrt von der Firma nach Hause. Fällt sie
+          in deine Mittagspause, wird die gemeinsame Zeit nur einmal gezählt.</p>
         <button class="btn ghost small wide" id="uClear" type="button"
                 style="margin-top:10px">Unterbrechung löschen</button>
       </div>
@@ -386,6 +421,7 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
     <div class="bar-wrap">
       <div class="bar">
         <div class="bar-fill" id="barFill"></div>
+        <div id="barPausen"></div>
         <div class="tick" style="left:25%"></div>
         <div class="tick" style="left:50%"></div>
         <div class="tick" style="left:75%"></div>
@@ -457,12 +493,22 @@ details.acc[open]>summary .chev{transform:rotate(180deg)}
       </div>
       <div class="row-fields">
         <div class="field">
-          <label for="bf">Frühstück (Min.)</label>
-          <input type="number" id="bf" min="0" max="120" step="5" inputmode="numeric" value="15">
+          <label for="bfVon">Frühstück von</label>
+          <input type="time" id="bfVon" value="09:30" style="font-size:18px">
         </div>
         <div class="field">
-          <label for="lu">Mittag (Min.)</label>
-          <input type="number" id="lu" min="0" max="120" step="5" inputmode="numeric" value="30">
+          <label for="bfBis">bis</label>
+          <input type="time" id="bfBis" value="09:45" style="font-size:18px">
+        </div>
+      </div>
+      <div class="row-fields">
+        <div class="field">
+          <label for="luVon">Mittag ab</label>
+          <input type="time" id="luVon" value="12:00" style="font-size:18px">
+        </div>
+        <div class="field">
+          <label for="luDauer">Mittag (Min.)</label>
+          <input type="number" id="luDauer" min="0" max="180" step="5" inputmode="numeric" value="30">
         </div>
       </div>
       <div class="field">
@@ -774,7 +820,8 @@ var SPEISEPLAN = "https://dmgmori.sharepoint.com/sites/AG/Catering_bielefeld/"
 
 var STANDARD = {
   start: "08:00", uFrom: "", uTo: "",
-  soll: 7, bf: 15, lu: 30, early: "06:00", speiseplan: SPEISEPLAN,
+  soll: 7, bfVon: "09:30", bfBis: "09:45", luVon: "12:00", luDauer: 30,
+  early: "06:00", speiseplan: SPEISEPLAN,
   theme: "auto", sprueche: true, konfetti: true
 };
 var cfg = {};
@@ -786,6 +833,11 @@ function load(){
 
   if (raw){
     for (var k in STANDARD) if (raw[k] != null) cfg[k] = raw[k];
+    // Bis Oktober 2026 waren die Pausen reine Minutenangaben (bf, lu).
+    if (raw.bfBis == null && isFinite(parseInt(raw.bf, 10))){
+      cfg.bfBis = fmtClock(toMin(cfg.bfVon) + parseInt(raw.bf, 10));
+    }
+    if (raw.luDauer == null && isFinite(parseInt(raw.lu, 10))) cfg.luDauer = parseInt(raw.lu, 10);
     // Der Speiseplan kam erst spaeter dazu. Wer die App vorher schon offen
     // hatte, hat ein leeres Feld gespeichert - das einmalig nachtragen.
     // Danach bleibt ein absichtlich geleertes Feld auch leer.
@@ -811,8 +863,8 @@ function uebernehmen(){
       if (s.weeklyHours > 0 && (s.workdays || []).length){
         cfg.soll = Math.round(s.weeklyHours / s.workdays.length * 100) / 100;
       }
-      if (s.breakfast != null) cfg.bf = s.breakfast;
-      if (s.lunch != null) cfg.lu = s.lunch;
+      if (s.breakfast != null) cfg.bfBis = fmtClock(toMin(cfg.bfVon) + (+s.breakfast || 0));
+      if (s.lunch != null) cfg.luDauer = +s.lunch || 0;
       if (s.earliestStart) cfg.early = s.earliestStart;
       if (s.theme) cfg.theme = s.theme;
       if (s.sprueche != null) cfg.sprueche = !!s.sprueche;
@@ -825,8 +877,8 @@ function uebernehmen(){
     var v1 = JSON.parse(localStorage.getItem("arbeitszeit.v1"));
     if (v1){
       if (parseFloat(v1.soll) > 0) cfg.soll = parseFloat(v1.soll);
-      if (isFinite(parseInt(v1.bf, 10))) cfg.bf = parseInt(v1.bf, 10);
-      if (isFinite(parseInt(v1.lu, 10))) cfg.lu = parseInt(v1.lu, 10);
+      if (isFinite(parseInt(v1.bf, 10))) cfg.bfBis = fmtClock(toMin(cfg.bfVon) + parseInt(v1.bf, 10));
+      if (isFinite(parseInt(v1.lu, 10))) cfg.luDauer = parseInt(v1.lu, 10);
     }
   } catch(e){}
 }
@@ -843,41 +895,108 @@ function save(){
    4. Die Rechnung
    ===================================================================== */
 
+/* Die Pausen sind feste Zeitfenster und zaehlen erst, wenn sie dran sind -
+   vorher wurden alle 45 Minuten ab der ersten Minute abgezogen, sodass
+   "Gearbeitet" morgens eine Dreiviertelstunde lang auf 0:00 stand. */
+
+/** Eingetragene Unterbrechung in Minuten, sonst 0. */
+function unterbrechungMin(){
+  var uF = toMin(cfg.uFrom), uT = toMin(cfg.uTo);
+  return (uF != null && uT != null && uT > uF) ? uT - uF : 0;
+}
+
+/** Pausenfenster des Tages: Fruehstueck, Mittag und eine eingetragene
+    Unterbrechung. Es zaehlt nur, was nach dem Arbeitsbeginn liegt - wer erst
+    um 10 Uhr anfaengt, hat die Fruehstueckspause nicht.
+    roh = einzelne Fenster mit Art, m = ueberlappende zusammengelegt. */
+function pausenfenster(start){
+  var roh = [];
+  var bv = toMin(cfg.bfVon), bb = toMin(cfg.bfBis);
+  if (bv != null && bb != null && bb > bv) roh.push({ von: bv, bis: bb, art: "fruehstueck" });
+  var lv = toMin(cfg.luVon), ld = Math.round(clamp(+cfg.luDauer || 0, 0, 180));
+  if (lv != null && ld > 0) roh.push({ von: lv, bis: lv + ld, art: "mittag" });
+  var uF = toMin(cfg.uFrom), uT = toMin(cfg.uTo);
+  if (uF != null && uT != null && uT > uF) roh.push({ von: uF, bis: uT, art: "unterbrechung" });
+
+  roh = roh
+    .map(function(p){ return { von: Math.max(p.von, start), bis: p.bis, art: p.art }; })
+    .filter(function(p){ return p.bis > p.von; })
+    .sort(function(x, y){ return x.von - y.von; });
+
+  // Ueberschneidungen zusammenlegen, etwa die Fahrt nach Hause ueber die
+  // Mittagszeit: dieselbe Minute zaehlt nur einmal als Pause.
+  var m = [];
+  roh.forEach(function(p){
+    var l = m[m.length - 1];
+    if (l && p.von <= l.bis) l.bis = Math.max(l.bis, p.bis);
+    else m.push({ von: p.von, bis: p.bis });
+  });
+  return { roh: roh, m: m };
+}
+
+/** Pausenminuten zwischen den Uhrzeiten a und b. */
+function pauseZwischen(m, a, b){
+  var sum = 0;
+  m.forEach(function(p){ sum += Math.max(0, Math.min(b, p.bis) - Math.max(a, p.von)); });
+  return sum;
+}
+
+/** Uhrzeit, zu der ab `start` genau `netto` Minuten gearbeitet sind -
+    Pausen werden uebersprungen. Grundlage fuer Feierabend, die
+    Ueberstundenliste und die 10-Stunden-Grenze. */
+function zeitpunktFuer(start, netto, m){
+  var t = start, rest = netto;
+  for (var i = 0; i < m.length; i++){
+    var p = m[i];
+    if (p.bis <= t) continue;
+    var von = Math.max(p.von, t);
+    if (von - t >= rest) break;          // fertig, bevor die Pause beginnt
+    rest -= von - t;
+    t = p.bis;
+  }
+  return t + rest;
+}
+
 function rechne(){
-  var soll  = Math.round(clamp(+cfg.soll || 0, 0, 10) * 60);
-  var pauseSoll = clamp(+cfg.bf || 0, 0, 120) + clamp(+cfg.lu || 0, 0, 120);
+  var soll = Math.round(clamp(+cfg.soll || 0, 0, 10) * 60);
 
   var startRaw = toMin(cfg.start);
-  if (startRaw == null) return { leer: true, soll: soll, pauseSoll: pauseSoll };
+  if (startRaw == null) return { leer: true, soll: soll };
 
   // Firmenregel: vor der fruehesten Zeit gestempelt zaehlt erst ab dieser.
   var early = toMin(cfg.early);
   var geklemmt = early != null && startRaw < early;
   var start = geklemmt ? early : startRaw;
 
-  // Unterbrechung - eine laengere Luecke deckt die Pause bereits ab,
-  // deshalb das Maximum und nicht die Summe.
-  var uF = toMin(cfg.uFrom), uT = toMin(cfg.uTo);
-  var unterbrechung = (uF != null && uT != null && uT > uF) ? uT - uF : 0;
-  var pause = Math.max(pauseSoll, unterbrechung);
-
-  var feierabend = start + soll + pause;
+  var pf = pausenfenster(start);
+  var feierabend = zeitpunktFuer(start, soll, pf.m);
   var jetzt = nowMin();
 
-  var anwesend   = jetzt - start;
-  var gearbeitet = Math.max(0, anwesend - pause);
-  var noch       = feierabend - jetzt;
-  var ueber      = Math.max(0, gearbeitet - soll);
+  var anwesend    = jetzt - start;
+  var pauseBisher = anwesend > 0 ? pauseZwischen(pf.m, start, jetzt) : 0;
+  var gearbeitet  = Math.max(0, anwesend - pauseBisher);
+  var ueber       = Math.max(0, gearbeitet - soll);
+
+  // Laeuft gerade eine Pause? Die eingetragene Unterbrechung hat beim
+  // Benennen Vorrang, das Ende gilt fuer alle zusammenhaengenden Fenster.
+  var jetztPause = null, pauseEnde = null;
+  pf.roh.forEach(function(p){
+    if (jetzt >= p.von && jetzt < p.bis && (!jetztPause || p.art === "unterbrechung")) jetztPause = p;
+  });
+  pf.m.forEach(function(p){ if (jetzt >= p.von && jetzt < p.bis) pauseEnde = p.bis; });
 
   var spanne = feierabend - start;
-  var fortschritt = spanne > 0 ? clamp((jetzt - start) / spanne, 0, 1) : 0;
-
   return {
-    leer: false, soll: soll, pauseSoll: pauseSoll, pause: pause,
-    unterbrechung: unterbrechung, geklemmt: geklemmt, startRaw: startRaw,
-    start: start, feierabend: feierabend, jetzt: jetzt,
-    anwesend: anwesend, gearbeitet: gearbeitet, noch: noch, ueber: ueber,
-    fortschritt: fortschritt, fertig: noch <= 0, zukunft: anwesend < 0
+    leer: false, soll: soll, start: start, startRaw: startRaw, geklemmt: geklemmt,
+    feierabend: feierabend, jetzt: jetzt, pausen: pf.m,
+    anwesend: anwesend, gearbeitet: gearbeitet, ueber: ueber,
+    pauseBisher: pauseBisher, pausePlan: pauseZwischen(pf.m, start, feierabend),
+    restArbeit: Math.max(0, soll - gearbeitet),
+    jetztPause: jetztPause, pauseEnde: pauseEnde,
+    fortschritt: spanne > 0 ? clamp((jetzt - start) / spanne, 0, 1) : 0,
+    geschafft: soll > 0 ? clamp(gearbeitet / soll, 0, 1) : 1,
+    fertig: anwesend >= 0 && gearbeitet >= soll,
+    zukunft: anwesend < 0
   };
 }
 
@@ -887,10 +1006,8 @@ function phaseOf(r){
   if (r.zukunft) return "future";
   if (r.gearbeitet >= 600) return "limit";
   if (r.fertig) return r.ueber <= 15 ? "done" : "overtime";
-  // Laeuft die eingetragene Unterbrechung gerade?
-  var uF = toMin(cfg.uFrom), uT = toMin(cfg.uTo);
-  if (uF != null && uT != null && r.jetzt >= uF && r.jetzt < uT) return "pause";
-  var p = r.fortschritt;
+  if (r.jetztPause) return "pause";
+  var p = r.geschafft;
   return p < 0.25 ? "morning" : p < 0.6 ? "mid" : p < 0.9 ? "stretch" : "endspurt";
 }
 
@@ -900,6 +1017,21 @@ function phaseOf(r){
 
 var warFertig = null;
 
+var PAUSEN_ARTEN = {
+  fruehstueck:   ["\u2615", "Frühstückspause", ""],
+  mittag:        ["\uD83C\uDF7D\uFE0F", "Mittagspause", " · Guten Appetit!"],
+  unterbrechung: ["\uD83D\uDE97", "Unterbrechung", ""]
+};
+
+/** Pausenfenster im Balken nur neu setzen, wenn sie sich geaendert haben -
+    sonst wuerde jede Sekunde das DOM ausgetauscht. */
+var letztePausen = null;
+function setzePausenImBalken(html){
+  if (html === letztePausen) return;
+  $("barPausen").innerHTML = html;
+  letztePausen = html;
+}
+
 function zeichne(){
   var r = rechne();
 
@@ -908,15 +1040,15 @@ function zeichne(){
 
   /* --- Unterbrechungs-Zeile --- */
   var uAcc = $("uAcc");
-  if (r.unterbrechung > 0){
+  var uMin = unterbrechungMin();
+  if (uMin > 0){
     $("uSummary").textContent = "Unterbrechung " + cfg.uFrom + " – " + cfg.uTo
-      + "  (" + fmtShort(r.unterbrechung) + " h)";
+      + "  (" + fmtShort(uMin) + " h)";
     uAcc.classList.add("set");
   } else {
     $("uSummary").textContent = "Unterbrechung eintragen";
     uAcc.classList.remove("set");
   }
-  $("uPause").textContent = String(r.pauseSoll);
 
   if (r.leer){
     $("heroLbl").textContent = "Noch zu arbeiten";
@@ -928,6 +1060,7 @@ function zeichne(){
     $("barPct").textContent = "0 %";
     $("barStart").textContent = "—";
     $("barEnd").textContent = "—";
+    setzePausenImBalken("");
     $("otWrap").hidden = true;
     $("otCard").hidden = true;
     $("pill").className = "pill idle";
@@ -950,21 +1083,32 @@ function zeichne(){
     $("heroSub").textContent = "Feierabend um " + fmtClock(r.feierabend) + " Uhr";
   } else if (r.fertig){
     $("heroLbl").textContent = "Feierabend seit";
-    $("heroBig").textContent = fmtShort(-r.noch);
+    $("heroBig").textContent = fmtShort(r.jetzt - r.feierabend);
     $("heroBig").classList.add("over");
     $("heroSub").textContent = "Soll war um " + fmtClock(r.feierabend) + " Uhr voll";
   } else {
+    // Die verbleibende Arbeit - sie steht waehrend einer Pause still.
     $("heroLbl").textContent = "Noch zu arbeiten";
-    $("heroBig").textContent = fmtShort(r.noch);
+    $("heroBig").textContent = fmtShort(r.restArbeit);
     $("heroBig").classList.remove("over");
     $("heroSub").textContent = "Feierabend um " + fmtClock(r.feierabend) + " Uhr";
   }
 
   /* --- Balken --- */
-  var pct = Math.round(r.fortschritt * 100);
+  // Die Fuellung laeuft mit der Uhr, die Pausenfenster liegen deckend darueber.
+  // Die Prozentzahl zaehlt nur echte Arbeit und steht in der Pause still.
   $("barFill").style.width = (r.fortschritt * 100) + "%";
   $("barFill").classList.toggle("full", r.fertig);
-  $("barPct").textContent = pct + " %";
+  $("barPct").textContent = Math.round(r.geschafft * 100) + " %";
+  var spanne = r.feierabend - r.start, bp = "";
+  r.pausen.forEach(function(p){
+    var a = Math.max(p.von, r.start), b = Math.min(p.bis, r.feierabend);
+    if (b <= a || spanne <= 0) return;
+    bp += '<div class="bar-pause" title="Pause ' + fmtClock(a) + "–" + fmtClock(b)
+        + '" style="left:' + ((a - r.start) / spanne * 100) + "%;width:"
+        + ((b - a) / spanne * 100) + '%"></div>';
+  });
+  setzePausenImBalken(bp);
   $("barStart").textContent = fmtClock(r.start);
   $("barEnd").textContent = fmtClock(r.feierabend);
 
@@ -991,14 +1135,20 @@ function zeichne(){
   } else if (r.fertig){
     pill.className = "pill over live";
     $("pillTxt").textContent = "Soll erfüllt · +" + fmtDur(r.ueber);
+  } else if (r.jetztPause){
+    var art = PAUSEN_ARTEN[r.jetztPause.art];
+    pill.className = "pill pause live";
+    $("pillTxt").textContent = art[0] + " " + art[1] + " · noch "
+      + Math.ceil(r.pauseEnde - r.jetzt) + " Min." + art[2];
   } else {
-    $("pillTxt").textContent = "Noch " + fmtDur(r.noch) + " bis Feierabend";
+    $("pillTxt").textContent = "Noch " + fmtDur(r.feierabend - r.jetzt) + " bis Feierabend";
   }
 
   /* --- Kennzahlen --- */
   $("vPresent").textContent = r.zukunft ? "—" : fmtH(r.anwesend);
   $("vNet").textContent     = r.zukunft ? "—" : fmtH(r.gearbeitet);
-  $("vBreak").textContent   = fmtH(r.pause);
+  $("vBreak").textContent   = r.zukunft ? "—" : fmtH(r.pauseBisher);
+  $("vBreak").title         = "Bisher genommen. Heute insgesamt: " + fmtShort(r.pausePlan) + " h";
   $("vOver").textContent    = fmtH(r.ueber);
   $("vOver").className      = "v" + (r.ueber > 0 ? " pos" : "");
 
@@ -1010,18 +1160,13 @@ function zeichne(){
       + ' werden nicht anerkannt – gerechnet wird ab <strong>' + cfg.early
       + ' Uhr</strong>.</span></div>');
   }
-  if (r.unterbrechung > r.pauseSoll){
-    hin.push('<div class="notice info"><span class="ico">🚗</span><span>Die Unterbrechung ist länger als deine '
-      + r.pauseSoll + ' Minuten Pause – der Feierabend verschiebt sich um <strong>'
-      + (r.unterbrechung - r.pauseSoll) + ' Min.</strong> nach hinten.</span></div>');
-  }
   if (r.gearbeitet >= 600){
     hin.push('<div class="notice stop"><span class="ico">🛑</span><span><strong>10 Stunden erreicht.</strong> '
       + 'Mehr lässt das Arbeitszeitgesetz an einem Werktag nicht zu – Schicht im Schacht!</span></div>');
   } else if (r.gearbeitet >= 570){
     hin.push('<div class="notice warn"><span class="ico">⏳</span><span>In <strong>'
       + fmtDur(600 - r.gearbeitet) + '</strong> ist die 10-Stunden-Grenze erreicht (um <strong>'
-      + fmtClock(r.start + 600 + r.pause) + '</strong>). Danach ist Schluss.</span></div>');
+      + fmtClock(zeitpunktFuer(r.start, 600, r.pausen)) + '</strong>). Danach ist Schluss.</span></div>');
   }
   $("notices").innerHTML = hin.join("");
 
@@ -1047,7 +1192,7 @@ function zeichneUeberstunden(r){
           +   '<span class="n">' + k + " \u00dcberstunde" + (k > 1 ? "n" : "")
           +     (zuviel ? '<span class="grenze">\u00fcber der 10-Stunden-Grenze</span>' : "")
           +   "</span>"
-          +   '<span class="t">' + fmtClock(r.feierabend + k * 60)
+          +   '<span class="t">' + fmtClock(zeitpunktFuer(r.start, r.soll + k * 60, r.pausen))
           +     (hit ? " \u2713" : "") + "</span>"
           + "</div>";
   }
@@ -1082,7 +1227,7 @@ function zeichneSpeiseplan(){
 /** Erklaertexte unter dem Soll und unter den Pausen auffrischen. */
 function notizen(){
   var soll = clamp(+cfg.soll || 0, 0, 10);
-  var pause = clamp(+cfg.bf || 0, 0, 120) + clamp(+cfg.lu || 0, 0, 120);
+  var luV = toMin(cfg.luVon), luD = Math.round(clamp(+cfg.luDauer || 0, 0, 180));
   var url = saubereUrl(cfg.speiseplan);
   $("speiseplanNote").textContent = !cfg.speiseplan
     ? "Leer lassen, wenn du keinen brauchst. Der Link bleibt nur auf diesem Gerät."
@@ -1092,9 +1237,13 @@ function notizen(){
         + "https:// beginnen.";
   $("sollNote").textContent = "Entspricht " + fmtNum(soll * 5) + " Stunden pro Woche "
     + "bei 5 Arbeitstagen. Zwischenwerte wie 7,5 gehen auch.";
-  $("setNote").textContent = "Zusammen " + pause
-    + " Min. Pause. Sie gelten als genommen und werden automatisch abgezogen – "
-    + "du musst nichts bestätigen.";
+  $("setNote").textContent = "Frühstück " + (cfg.bfVon || "—") + "–" + (cfg.bfBis || "—")
+    + ", Mittag " + (luV != null && luD > 0 ? fmtClock(luV) + "–" + fmtClock(luV + luD) : "keins")
+    + ". Eine Pause zählt erst, wenn sie dran ist – du musst nichts bestätigen. "
+    + "Liegt sie vor deinem Arbeitsbeginn, entfällt sie.";
+  Array.prototype.forEach.call(document.querySelectorAll("[data-lu]"), function(b){
+    b.setAttribute("aria-pressed", b.dataset.lu === cfg.luVon ? "true" : "false");
+  });
   Array.prototype.forEach.call(document.querySelectorAll("[data-soll]"), function(b){
     b.setAttribute("aria-pressed", +b.dataset.soll === soll ? "true" : "false");
   });
@@ -1114,8 +1263,10 @@ function felderFuellen(){
   $("uFrom").value = cfg.uFrom;
   $("uTo").value = cfg.uTo;
   $("soll").value = cfg.soll;
-  $("bf").value = cfg.bf;
-  $("lu").value = cfg.lu;
+  $("bfVon").value = cfg.bfVon;
+  $("bfBis").value = cfg.bfBis;
+  $("luVon").value = cfg.luVon;
+  $("luDauer").value = cfg.luDauer;
   $("early").value = cfg.early;
   $("speiseplan").value = cfg.speiseplan;
   $("optSprueche").checked = !!cfg.sprueche;
@@ -1130,8 +1281,10 @@ function uebernehmenUndZeichnen(){
   cfg.uFrom = $("uFrom").value;
   cfg.uTo   = $("uTo").value;
   cfg.soll  = $("soll").value === "" ? 0 : +$("soll").value;
-  cfg.bf    = $("bf").value === "" ? 0 : +$("bf").value;
-  cfg.lu    = $("lu").value === "" ? 0 : +$("lu").value;
+  cfg.bfVon   = $("bfVon").value;
+  cfg.bfBis   = $("bfBis").value;
+  cfg.luVon   = $("luVon").value;
+  cfg.luDauer = $("luDauer").value === "" ? 0 : +$("luDauer").value;
   cfg.early = $("early").value;
   cfg.speiseplan = $("speiseplan").value;
   cfg.sprueche = $("optSprueche").checked;
@@ -1142,7 +1295,7 @@ function uebernehmenUndZeichnen(){
   zeichne();
 }
 
-["start","uFrom","uTo","soll","bf","lu","early","speiseplan"].forEach(function(id){
+["start","uFrom","uTo","soll","bfVon","bfBis","luVon","luDauer","early","speiseplan"].forEach(function(id){
   $(id).addEventListener("input", uebernehmenUndZeichnen);
   $(id).addEventListener("change", uebernehmenUndZeichnen);
 });
@@ -1161,6 +1314,15 @@ $("optKonfetti").addEventListener("change", uebernehmenUndZeichnen);
 Array.prototype.forEach.call(document.querySelectorAll("[data-soll]"), function(b){
   b.addEventListener("click", function(){
     $("soll").value = b.dataset.soll;
+    uebernehmenUndZeichnen();
+  });
+});
+
+/* Mittag-Schnellwahl: die Kantine hat drei Schichten. Die Wahl bleibt
+   gespeichert - einstellen muss man sie nur an abweichenden Tagen. */
+Array.prototype.forEach.call(document.querySelectorAll("[data-lu]"), function(b){
+  b.addEventListener("click", function(){
+    $("luVon").value = b.dataset.lu;
     uebernehmenUndZeichnen();
   });
 });
@@ -1185,7 +1347,9 @@ $("themeSeg").addEventListener("click", function(e){
 
 $("reset").addEventListener("click", function(){
   if (!confirm("Einstellungen auf Standard zurücksetzen?")) return;
-  cfg.soll = STANDARD.soll; cfg.bf = STANDARD.bf; cfg.lu = STANDARD.lu;
+  cfg.soll = STANDARD.soll;
+  cfg.bfVon = STANDARD.bfVon; cfg.bfBis = STANDARD.bfBis;
+  cfg.luVon = STANDARD.luVon; cfg.luDauer = STANDARD.luDauer;
   cfg.early = STANDARD.early; cfg.theme = STANDARD.theme;
   cfg.speiseplan = STANDARD.speiseplan;
   cfg.sprueche = STANDARD.sprueche; cfg.konfetti = STANDARD.konfetti;
