@@ -55,6 +55,24 @@ Acrobat-Betrachter ihre eigene Adresse voran (`chrome-extension://…/https://�
 dieser Teil wird beim Einfügen automatisch abgeschnitten. Erlaubt sind nur `http`
 und `https`.
 
+## Miteinander
+
+**„Wer kommt mit?"** – In der Speiseplan-Karte steht bis zum Ende der eigenen
+Mittagspause ein Knopf, der eine fertige Einladung erzeugt: *„Mittag heute um
+12:30 in der Kantine – wer kommt mit?"* samt Link zum Speiseplan. Auf dem Handy
+öffnet sich das Teilen-Menü (WhatsApp, Teams …), am Rechner landet der Text in
+der Zwischenablage zum Einfügen in Teams.
+
+**Sprüche** – Neben den Durchhalte-Sprüchen gibt es solche, die auf Kollegen,
+Wertschätzung und konzentriertes Arbeiten zielen. Montags, mittwochs und
+freitags mischen sich eigene Sprüche dazu.
+
+**Sprüche von Kollegen** – Unten auf der Seite: *Eigenen Spruch vorschlagen*.
+Der Vorschlag wird als Text an Markus geschickt und von Hand in die Sammlung
+`KOLLEGEN` in `index.html` übernommen. Mit Vornamen steht darunter
+„— von …"; ohne bleibt er anonym. Es wird nichts gespeichert oder übertragen,
+außer dem, was man selbst verschickt.
+
 ## Dateien
 
 ```
